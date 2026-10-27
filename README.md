@@ -3,6 +3,24 @@
 Android app (Kotlin + Jetpack Compose) that scans Wi-Fi and Bluetooth, discovers devices on the
 local network, looks up MAC vendors, guesses device types, and keeps an index of everything it has seen.
 
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/network.png" width="200" alt="Network tab with discovered devices"><br><sub>Network discovery</sub></td>
+    <td align="center"><img src="docs/screenshots/detail.png" width="200" alt="Device detail with type guess and reasons"><br><sub>Device detail + type guess</sub></td>
+    <td align="center"><img src="docs/screenshots/wifi.png" width="200" alt="Wi-Fi access point list"><br><sub>Wi-Fi scanner</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/index.png" width="200" alt="Index of every device seen"><br><sub>Device index</sub></td>
+    <td align="center"><img src="docs/screenshots/lookup.png" width="200" alt="MAC vendor lookup"><br><sub>MAC vendor lookup</sub></td>
+    <td></td>
+  </tr>
+</table>
+
+<sub>Captured on the Android emulator, whose virtual network only has a gateway, a DNS server and the
+emulator itself. On a real home network you'll see phones, TVs, printers, smart plugs and so on.</sub>
+
 ## Features
 
 | Tab | What it does |

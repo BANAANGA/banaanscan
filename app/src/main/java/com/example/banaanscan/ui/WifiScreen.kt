@@ -63,7 +63,7 @@ fun WifiScreen(vm: MainViewModel) {
             }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("${shown.size} access points", Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+            Text("${shown.size} access point" + if (shown.size == 1) "" else "s",Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
             Button(onClick = { vm.wifi.scan() }) {
                 Icon(Icons.Filled.Refresh, null)
                 Text("Scan", Modifier.padding(start = 4.dp))
