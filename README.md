@@ -31,6 +31,9 @@ emulator itself. On a real home network you'll see phones, TVs, printers, smart 
 | **Index** | Persistent JSON index of every LAN/BT/Wi-Fi device with first/last seen and sighting count. Search, filter, export CSV. |
 | **Lookup** | Manual MAC/OUI lookup (MA-L/MA-M/MA-S), randomized-MAC detection, and updating the vendor database. |
 
+The app starts in dark mode. The button in the top bar cycles Dark → Light → Follow system, and the
+choice is remembered.
+
 Device-type guessing (`classify/DeviceClassifier.kt`) gives each signal points towards a type
 (router, phone, printer, camera, smart home…). The highest score wins, and the gap to the runner-up
 sets the confidence. Tap any device to see the reasons.

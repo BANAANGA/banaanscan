@@ -4,8 +4,18 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.banaanscan.ui.ThemeMode
+import com.example.banaanscan.ui.isDark
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -49,10 +59,19 @@ import com.example.banaanscan.ui.WifiScreen
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
-            BanaanScanTheme {
-                BanaanScanApp()
+            val vm: MainViewModel = viewModel()
+            val mode by vm.themeMode.collectAsStateWithLifecycle()
+            val dark = mode.isDark()
+            // Keep status/navigation bar icons readable for the chosen theme, not the system one.
+            DisposableEffect(dark) {
+                val style = if (dark) SystemBarStyle.dark(Color.TRANSPARENT)
+                else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+                onDispose { }
+            }
+            BanaanScanTheme(dark) {
+                BanaanScanApp(vm, mode)
             }
         }
     }
@@ -84,7 +103,7 @@ private enum class Tab(val label: String, val icon: ImageVector) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BanaanScanApp(vm: MainViewModel = viewModel()) {
+private fun BanaanScanApp(vm: MainViewModel, themeMode: ThemeMode) {
     val context = LocalContext.current
     var tab by rememberSaveable { mutableStateOf(Tab.NETWORK) }
     var granted by remember { mutableStateOf(Permissions.allGranted(context)) }
@@ -96,7 +115,23 @@ private fun BanaanScanApp(vm: MainViewModel = viewModel()) {
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("BanaanScan · ${tab.label}") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("BanaanScan · ${tab.label}") },
+                actions = {
+                    IconButton(onClick = vm::cycleTheme) {
+                        Icon(
+                            when (themeMode) {
+                                ThemeMode.DARK -> Icons.Filled.DarkMode
+                                ThemeMode.LIGHT -> Icons.Filled.LightMode
+                                ThemeMode.SYSTEM -> Icons.Filled.BrightnessAuto
+                            },
+                            contentDescription = "Theme: ${themeMode.label}",
+                        )
+                    }
+                },
+            )
+        },
         bottomBar = {
             NavigationBar {
                 Tab.entries.forEach { t ->

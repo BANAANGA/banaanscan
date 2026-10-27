@@ -8,6 +8,7 @@ import com.example.banaanscan.data.OuiDatabase
 import com.example.banaanscan.scan.BluetoothScanner
 import com.example.banaanscan.scan.LanScanner
 import com.example.banaanscan.scan.WifiScanner
+import com.example.banaanscan.ui.ThemeMode
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.sample
@@ -18,6 +19,11 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     val bt = BluetoothScanner(app)
     val lan = LanScanner(app)
     val index = DeviceIndex(app)
+
+    private val prefs = app.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
+    val themeMode = MutableStateFlow(
+        runCatching { ThemeMode.valueOf(prefs.getString("theme", null) ?: "") }.getOrDefault(ThemeMode.DARK)
+    )
 
     val ouiStatus = MutableStateFlow("Loading vendor database…")
     val ouiBusy = MutableStateFlow(false)
@@ -48,6 +54,13 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
             )
             ouiBusy.value = false
         }
+    }
+
+    /** Cycles Dark → Light → Follow system and remembers the choice. */
+    fun cycleTheme() {
+        val next = ThemeMode.entries[(themeMode.value.ordinal + 1) % ThemeMode.entries.size]
+        themeMode.value = next
+        prefs.edit().putString("theme", next.name).apply()
     }
 
     fun scanLan() {

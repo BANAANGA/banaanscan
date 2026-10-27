@@ -47,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -55,9 +56,17 @@ import androidx.compose.ui.unit.dp
 import com.example.banaanscan.data.DeviceType
 import com.example.banaanscan.data.Guess
 
+enum class ThemeMode(val label: String) { DARK("Dark"), LIGHT("Light"), SYSTEM("Follow system") }
+
 @Composable
-fun BanaanScanTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
+fun ThemeMode.isDark(): Boolean = when (this) {
+    ThemeMode.DARK -> true
+    ThemeMode.LIGHT -> false
+    ThemeMode.SYSTEM -> isSystemInDarkTheme()
+}
+
+@Composable
+fun BanaanScanTheme(dark: Boolean, content: @Composable () -> Unit) {
     val context = LocalContext.current
     val scheme = when {
         Build.VERSION.SDK_INT >= 31 -> if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
@@ -108,11 +117,12 @@ fun PermissionBanner(onGrant: () -> Unit) {
 @Composable
 fun RssiText(rssi: Int?) {
     if (rssi == null) return
+    val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     val color = when {
-        rssi >= -55 -> Color(0xFF2E7D32)
-        rssi >= -70 -> Color(0xFF9E9D24)
-        rssi >= -80 -> Color(0xFFEF6C00)
-        else -> Color(0xFFC62828)
+        rssi >= -55 -> if (dark) Color(0xFF81C784) else Color(0xFF2E7D32)
+        rssi >= -70 -> if (dark) Color(0xFFDCE775) else Color(0xFF9E9D24)
+        rssi >= -80 -> if (dark) Color(0xFFFFB74D) else Color(0xFFEF6C00)
+        else -> if (dark) Color(0xFFE57373) else Color(0xFFC62828)
     }
     Text("$rssi dBm", color = color, style = MaterialTheme.typography.labelMedium)
 }
