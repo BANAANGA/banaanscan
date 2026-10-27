@@ -44,24 +44,27 @@ fun NetworkScreen(vm: MainViewModel) {
 
     LaunchedEffect(Unit) { vm.lan.refreshNetwork() }
 
-    Column {
-        NetworkCard(net)
-        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(status, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-            if (running) OutlinedButton(onClick = vm::stopLan) { Text("Stop") }
-            else Button(onClick = vm::scanLan) { Text("Scan") }
-        }
-        if (running) LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
-        if (devices.isNotEmpty()) {
-            FlowRow(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
-                devices.groupingBy { it.guess.type }.eachCount().entries.sortedByDescending { it.value }
-                    .forEach { (type, n) -> Tag("${type.label}: $n") }
+    // One scrolling list, so the header doesn't crowd out the devices in landscape.
+    LazyColumn {
+        item(key = "header") {
+            Column {
+                NetworkCard(net)
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(status, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                    if (running) OutlinedButton(onClick = vm::stopLan) { Text("Stop") }
+                    else Button(onClick = vm::scanLan) { Text("Scan") }
+                }
+                if (running) LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
+                if (devices.isNotEmpty()) {
+                    FlowRow(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                        devices.groupingBy { it.guess.type }.eachCount().entries.sortedByDescending { it.value }
+                            .forEach { (type, n) -> Tag("${type.label}: $n") }
+                    }
+                }
+                HorizontalDivider()
             }
         }
-        HorizontalDivider()
-        LazyColumn {
-            items(devices, key = { it.ip }) { d -> LanRow(d) { selectedIp = d.ip } }
-        }
+        items(devices, key = { it.ip }) { d -> LanRow(d) { selectedIp = d.ip } }
     }
 
     selectedIp?.let { ip ->
@@ -100,10 +103,10 @@ private fun LanRow(d: LanDevice, onClick: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                 )
                 FlowRow {
-                    Tag("${d.guess.type.label} ${d.guess.confidence}%")
+                    Tag(d.guess.short())
                     if (d.isSelf) Tag("You")
                     if (d.isGateway) Tag("Gateway")
-                    if (d.openPorts.isNotEmpty()) Tag("${d.openPorts.size} open ports")
+                    if (d.openPorts.isNotEmpty()) Tag("${d.openPorts.size} open port" + if (d.openPorts.size == 1) "" else "s")
                     if (d.mdnsServices.isNotEmpty()) Tag("mDNS")
                     if (d.ssdp != null) Tag("UPnP")
                 }

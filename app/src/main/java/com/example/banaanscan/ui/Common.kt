@@ -176,3 +176,5 @@ fun ageText(ts: Long): String {
         else -> "${s / 86_400}d ago"
     }
 }
+
+fun Guess.short(): String = if (type == DeviceType.UNKNOWN) type.label else "${type.label} $confidence%"

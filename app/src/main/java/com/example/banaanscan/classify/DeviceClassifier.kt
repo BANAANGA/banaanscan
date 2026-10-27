@@ -31,6 +31,9 @@ import kotlin.math.roundToInt
  */
 object DeviceClassifier {
 
+    /** Below this score a single weak clue (e.g. one open port) is not enough to name a type. */
+    private const val MIN_SCORE = 20
+
     private class Scorer {
         private val points = EnumMap<DeviceType, Int>(DeviceType::class.java)
         private val notes = mutableListOf<Pair<DeviceType, String>>()
@@ -51,6 +54,10 @@ object DeviceClassifier {
         fun guess(): Guess {
             val ranked = points.entries.sortedByDescending { it.value }
             val top = ranked.firstOrNull() ?: return Guess.UNKNOWN
+            if (top.value < MIN_SCORE) {
+                return Guess(DeviceType.UNKNOWN, 0,
+                    listOf("Not enough evidence for a guess") + notes.map { "${it.first.label}: ${it.second}" })
+            }
             val second = ranked.getOrNull(1)?.value ?: 0
             val confidence = (minOf(top.value, 95) * top.value / (top.value + second).toFloat())
                 .roundToInt().coerceIn(5, 95)

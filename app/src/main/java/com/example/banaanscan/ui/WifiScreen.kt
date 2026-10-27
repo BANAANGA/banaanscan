@@ -126,7 +126,8 @@ private fun WifiRow(n: WifiNetwork, onClick: () -> Unit) {
         },
         supportingContent = {
             Column {
-                Text("${n.bssid} · ${n.vendor ?: "unknown vendor"}", style = MaterialTheme.typography.bodySmall)
+                val vendor = n.vendor ?: if (n.randomizedBssid) "private / virtual BSSID" else "unknown vendor"
+                Text("${n.bssid} · $vendor", style = MaterialTheme.typography.bodySmall)
                 FlowRow {
                     Tag(n.band)
                     Tag("ch ${n.channel}")

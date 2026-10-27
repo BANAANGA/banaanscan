@@ -130,7 +130,7 @@ private fun BtRow(d: BtDevice, onClick: () -> Unit) {
             Column {
                 Text("${d.address} · ${vendorText(d)}", style = MaterialTheme.typography.bodySmall)
                 FlowRow {
-                    Tag("${d.guess.type.label} ${d.guess.confidence}%")
+                    Tag(d.guess.short())
                     if (d.le) Tag("BLE")
                     if (d.classic) Tag("Classic")
                     if (d.bonded) Tag("Paired")
