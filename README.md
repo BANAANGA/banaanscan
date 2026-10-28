@@ -34,9 +34,18 @@ emulator itself. On a real home network you'll see phones, TVs, printers, smart 
 The app starts in dark mode. The button in the top bar cycles Dark → Light → Follow system, and the
 choice is remembered.
 
-Device-type guessing (`classify/DeviceClassifier.kt`) gives each signal points towards a type
-(router, phone, printer, camera, smart home…). The highest score wins, and the gap to the runner-up
-sets the confidence. Tap any device to see the reasons.
+### Device-type guessing
+
+`classify/DeviceClassifier.kt` gives each signal points towards a type (router, phone, printer,
+camera, smart home…). The highest score wins, and the gap to the runner-up sets the confidence.
+Devices with too little evidence (for example a single open port) stay **Unknown** rather than getting
+a shaky label. Tap any device to see the reasons behind its guess.
+
+### Vendor database
+
+On first launch the app downloads Wireshark's `manuf` file (IEEE OUI registries, ~58,000 prefixes) into
+private storage. **Lookup → Update now** refreshes it. To work fully offline, put that file at
+`app/src/main/assets/manuf` before building.
 
 ## Android limitations (worth knowing)
 
@@ -49,17 +58,46 @@ sets the confidence. Tap any device to see the reasons.
   vendor. The app uses BLE manufacturer data instead.
 * Your own MAC is hidden (`02:00:00:00:00:00`) on Android 6+.
 
-## Vendor database
+## Requirements
 
-On first launch the app downloads Wireshark's `manuf` file (IEEE OUI registries, ~50k entries) into
-private storage. To work fully offline, put that file at `app/src/main/assets/manuf` before building.
+* Android 8.0 (API 26) or newer; targets Android 15 (API 35)
+* Permissions: location and nearby devices (needed by Android for Wi-Fi and Bluetooth scans).
+  Nothing is sent anywhere except the vendor-database download.
 
-## Build
+## Build and install
 
-Open the folder in Android Studio (Ladybug or newer) and press Run, or with a local SDK:
+You need JDK 17 and the Android SDK (platform 35). The Gradle wrapper is included.
+
+**Android Studio:** open the project folder and press Run.
+
+**Command line:**
+
+```bash
+./gradlew assembleDebug
+```
+
+The APK ends up in `app/build/outputs/apk/debug/app-debug.apk`. To install it on a phone with USB
+debugging enabled:
+
+```bash
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+## Testing status
+
+Tested on the Android 15 emulator (Pixel 6 profile): all tabs, LAN scan, MAC lookup, index persistence,
+rotation and the theme toggle. **Not yet tested on a physical phone**, so real-world Wi-Fi, Bluetooth and
+home-network results are unverified.
+
+## Project layout
 
 ```
-gradle wrapper && ./gradlew assembleDebug
+app/src/main/java/com/example/banaanscan/
+├── MainActivity.kt / MainViewModel.kt   app shell, permissions, theme, state
+├── scan/       WifiScanner, BluetoothScanner, LanScanner, MdnsScanner, SsdpScanner, NetBios, Probes
+├── classify/   DeviceClassifier (type-guessing rules)
+├── data/       models, OuiDatabase (MAC vendors), DeviceIndex (saved devices)
+└── ui/         one screen per tab + shared components
 ```
 
-minSdk 26 (Android 8), targetSdk 35. Only scan networks you own or have permission to scan.
+Only scan networks you own or have permission to scan.
