@@ -9,6 +9,9 @@ import com.example.banaanscan.scan.BluetoothScanner
 import com.example.banaanscan.scan.LanScanner
 import com.example.banaanscan.scan.WifiScanner
 import com.example.banaanscan.ui.ThemeMode
+import com.example.banaanscan.zigbee.UsbDongle
+import com.example.banaanscan.zigbee.ZigbeeDebug
+import com.example.banaanscan.zigbee.ZigbeeScanner
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.sample
@@ -18,6 +21,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     val wifi = WifiScanner(app)
     val bt = BluetoothScanner(app)
     val lan = LanScanner(app)
+    val zigbee = ZigbeeScanner(app)
     val index = DeviceIndex(app)
 
     private val prefs = app.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
@@ -28,6 +32,8 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     val ouiStatus = MutableStateFlow("Loading vendor database…")
     val ouiBusy = MutableStateFlow(false)
     private var lanJob: Job? = null
+    private var zigbeeJob: Job? = null
+    private var simulatedKind: String? = null
 
     init {
         viewModelScope.launch {
@@ -38,6 +44,8 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { wifi.results.collect { index.recordWifi(it) } }
         viewModelScope.launch { bt.devices.sample(2000).collect { index.recordBt(it.values) } }
         viewModelScope.launch { lan.devices.collect { index.recordLan(it, lan.network.value?.ssid) } }
+        viewModelScope.launch { zigbee.networks.collect { index.recordZigbee(it) } }
+        viewModelScope.launch { zigbee.sniffedDevices.sample(2000).collect { index.recordSniffed(it) } }
     }
 
     fun updateOui() {
@@ -72,7 +80,35 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         lanJob?.cancel()
     }
 
+    fun scanZigbee(dongle: UsbDongle) {
+        if (zigbeeJob?.isActive == true) return
+        val simulated = if (dongle.device == null) simulatedKind?.let(ZigbeeDebug::simulatedLink) else null
+        zigbeeJob = viewModelScope.launch {
+            if (simulated != null) zigbee.scanSimulated(simulated) else zigbee.scan(dongle)
+        }
+    }
+
+    fun sniffZigbee(dongle: UsbDongle, channel: Int?) {
+        if (zigbeeJob?.isActive == true) return
+        val simulated = if (dongle.device == null) simulatedKind?.let(ZigbeeDebug::simulatedLink) else null
+        zigbeeJob = viewModelScope.launch {
+            if (simulated != null) zigbee.sniffSimulated(simulated, channel) else zigbee.sniff(dongle, channel)
+        }
+    }
+
+    fun stopZigbee() {
+        zigbeeJob?.cancel()
+    }
+
+    /** Debug builds only: lists a simulated dongle, because emulators have no USB host. */
+    fun addSimulatedZigbeeDongle(kind: String) {
+        if (simulatedKind != null || ZigbeeDebug.simulatedLink(kind) == null) return
+        simulatedKind = kind
+        zigbee.addSimulatedDongle("Simulated $kind dongle")
+    }
+
     override fun onCleared() {
+        zigbee.close()
         bt.stop()
         wifi.stop()
     }

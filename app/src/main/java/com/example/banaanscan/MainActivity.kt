@@ -27,10 +27,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.DeviceHub
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -55,12 +57,14 @@ import com.example.banaanscan.ui.LookupScreen
 import com.example.banaanscan.ui.NetworkScreen
 import com.example.banaanscan.ui.PermissionBanner
 import com.example.banaanscan.ui.WifiScreen
+import com.example.banaanscan.ui.ZigbeeScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             val vm: MainViewModel = viewModel()
+            intent.getStringExtra("simulate_zigbee")?.let(vm::addSimulatedZigbeeDongle)
             val mode by vm.themeMode.collectAsStateWithLifecycle()
             val dark = mode.isDark()
             // Keep status/navigation bar icons readable for the chosen theme, not the system one.
@@ -96,6 +100,7 @@ object Permissions {
 private enum class Tab(val label: String, val icon: ImageVector) {
     WIFI("Wi-Fi", Icons.Filled.Wifi),
     BLUETOOTH("Bluetooth", Icons.Filled.Bluetooth),
+    ZIGBEE("Zigbee", Icons.Filled.Hub),
     NETWORK("Network", Icons.Filled.DeviceHub),
     INDEX("Index", Icons.Filled.History),
     LOOKUP("Lookup", Icons.Filled.Search),
@@ -139,7 +144,8 @@ private fun BanaanScanApp(vm: MainViewModel, themeMode: ThemeMode) {
                         selected = tab == t,
                         onClick = { tab = t },
                         icon = { Icon(t.icon, contentDescription = null) },
-                        label = { Text(t.label) },
+                        // Six tabs leave little room: keep labels on one line.
+                        label = { Text(t.label, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
                     )
                 }
             }
@@ -150,6 +156,7 @@ private fun BanaanScanApp(vm: MainViewModel, themeMode: ThemeMode) {
             when (tab) {
                 Tab.WIFI -> WifiScreen(vm)
                 Tab.BLUETOOTH -> BluetoothScreen(vm)
+                Tab.ZIGBEE -> ZigbeeScreen(vm)
                 Tab.NETWORK -> NetworkScreen(vm)
                 Tab.INDEX -> IndexScreen(vm)
                 Tab.LOOKUP -> LookupScreen(vm)

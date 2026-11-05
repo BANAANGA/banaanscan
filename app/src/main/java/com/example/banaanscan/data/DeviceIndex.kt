@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.banaanscan.zigbee.SniffedDevice
+import com.example.banaanscan.zigbee.ZigbeeNetwork
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -21,7 +23,7 @@ import java.io.File
  */
 class DeviceIndex(context: Context) {
 
-    enum class Kind(val label: String) { LAN("Network"), BLUETOOTH("Bluetooth"), WIFI("Wi-Fi AP") }
+    enum class Kind(val label: String) { LAN("Network"), BLUETOOTH("Bluetooth"), WIFI("Wi-Fi AP"), ZIGBEE("Zigbee"), RADIO("802.15.4") }
 
     data class Entry(
         val key: String,
@@ -89,6 +91,34 @@ class DeviceIndex(context: Context) {
         for (n in networks) {
             upsert("ap:${n.bssid}", Kind.WIFI, n.ssid, n.bssid, null, n.vendor, n.guess.type, n.ssid,
                 "${n.band} ch ${n.channel} · ${n.security}")
+        }
+        commit()
+    }
+
+    fun recordZigbee(networks: List<ZigbeeNetwork>) {
+        if (networks.isEmpty()) return
+        for (n in networks) {
+            val details = buildList {
+                add("ch ${n.channel}")
+                if (n.permitJoining) add("open for joining")
+                if (n.routers.size > 1) add("${n.routers.size} routers")
+            }.joinToString(" · ")
+            upsert("zigbee:${n.extendedPanId}", Kind.ZIGBEE, "PAN 0x%04X".format(n.panId), n.extendedPanId, null,
+                n.possibleVendor, DeviceType.SMART_HOME, null, details)
+        }
+        commit()
+    }
+
+    fun recordSniffed(devices: List<SniffedDevice>) {
+        if (devices.isEmpty()) return
+        for (d in devices) {
+            val details = listOfNotNull(
+                d.pan?.let { "PAN 0x%04X".format(it) },
+                "ch " + d.channels.sorted().joinToString(","),
+                d.hint.label,
+            ).joinToString(" · ")
+            upsert("radio:${d.key}", Kind.RADIO, d.address.text, d.address.extended, null,
+                d.possibleVendor, DeviceType.UNKNOWN, null, details)
         }
         commit()
     }
