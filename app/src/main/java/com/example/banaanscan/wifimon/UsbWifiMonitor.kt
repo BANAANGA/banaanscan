@@ -109,14 +109,13 @@ enum class ChannelPlan(val label: String, val freqs: List<Int>) {
 
 /**
  * Wi-Fi monitor mode through an MT7921U USB adapter, using BanaanScan's own driver (no root). Only listens: the
- * driver never transmits. Firmware isn't bundled; tools/mt7921u/push-firmware.sh copies it onto the phone.
+ * driver never transmits. The firmware is bundled in assets/mt7921u under MediaTek's licence (LICENCE.mediatek there);
+ * a copy put on the phone with tools/mt7921u/push-firmware.sh takes precedence, for trying other versions.
  */
 class UsbWifiMonitor(context: Context) {
     private val app = context.applicationContext
     private val usb: UsbManager? = app.getSystemService(UsbManager::class.java)
     val firmwareDir = File(app.filesDir, "mt7921u")
-    private val patchFile get() = File(firmwareDir, "WIFI_MT7961_patch_mcu_1_2_hdr.bin")
-    private val ramFile get() = File(firmwareDir, "WIFI_RAM_CODE_MT7961_1.bin")
     /** Readable after a session with `adb shell run-as com.example.banaanscan cat files/mt7921u/log.txt`. */
     val logFile get() = File(firmwareDir, "log.txt")
 
@@ -152,7 +151,16 @@ class UsbWifiMonitor(context: Context) {
 
     fun refresh() {
         adapter.value = usb?.deviceList?.values?.firstOrNull { it.vendorId == Mt7921u.VENDOR_ID && it.productId == Mt7921u.PRODUCT_ID }
-        firmwarePresent.value = patchFile.isFile && ramFile.isFile
+        firmwarePresent.value = FIRMWARE.all { File(firmwareDir, it).isFile || isBundled(it) }
+    }
+
+    private fun isBundled(name: String) = runCatching { app.assets.open("mt7921u/$name").close() }.isSuccess
+
+    /** The firmware file and where it came from: a pushed copy wins over the bundled one. */
+    private fun firmware(name: String): Pair<ByteArray, String> {
+        val pushed = File(firmwareDir, name)
+        if (pushed.isFile) return pushed.readBytes() to "pushed copy"
+        return app.assets.open("mt7921u/$name").use { it.readBytes() } to "bundled"
     }
 
     fun close() {
@@ -174,8 +182,8 @@ class UsbWifiMonitor(context: Context) {
             status.value = msg
         }
         try {
-            if (!patchFile.isFile || !ramFile.isFile) {
-                throw Mt7921Exception("Firmware missing. Copy it to the phone with tools/mt7921u/push-firmware.sh, then try again.")
+            if (!firmwarePresent.value) {
+                throw Mt7921Exception("Firmware missing from this build. Copy it to the phone with tools/mt7921u/push-firmware.sh, then try again.")
             }
             note("Waiting for USB permission…")
             if (!ensurePermission(device)) throw Mt7921Exception("USB permission was denied.")
@@ -202,7 +210,10 @@ class UsbWifiMonitor(context: Context) {
             note("Loading firmware…")
             val chip = Mt7921u(AndroidUsbIo(connection, iface)) { note(it) }
             val started = System.currentTimeMillis()
-            val info = chip.bringUp(PatchFile(patchFile.readBytes()), RamFile(ramFile.readBytes()))
+            val (patchBytes, patchSource) = firmware(FIRMWARE[0])
+            val (ramBytes, ramSource) = firmware(FIRMWARE[1])
+            note("Firmware: patch $patchSource, RAM $ramSource")
+            val info = chip.bringUp(PatchFile(patchBytes), RamFile(ramBytes))
             note("Firmware ${info.firmware} running after ${System.currentTimeMillis() - started} ms; adapter ${info.capabilities.macAddress}")
             val channels = plan.freqs.map(Channel::fromFreq)
             val monitor = Monitor(chip)
@@ -300,5 +311,9 @@ class UsbWifiMonitor(context: Context) {
         } finally {
             runCatching { app.unregisterReceiver(receiver) }
         }
+    }
+
+    private companion object {
+        val FIRMWARE = listOf("WIFI_MT7961_patch_mcu_1_2_hdr.bin", "WIFI_RAM_CODE_MT7961_1.bin")
     }
 }

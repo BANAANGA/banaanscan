@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Copies the MT7921U firmware from this computer's linux-firmware onto the phone, for BanaanScan's USB adapter mode.
-# The files aren't bundled with the app until their licence has been checked. Works with debug builds (run-as).
+# Copies MT7921U firmware from this computer onto the phone. The app bundles its own copy; a pushed copy takes
+# precedence, which is useful for trying other firmware versions. Works with debug builds (run-as).
 # Usage: tools/mt7921u/push-firmware.sh [adb serial]
 set -euo pipefail
 ADB=${ADB:-adb}

@@ -65,7 +65,7 @@ fun UsbAdapterSection(vm: MainViewModel) {
                             Text(if (adapter != null) "MediaTek MT7921U connected" else "Plug in an MT7921U adapter", fontWeight = FontWeight.Bold)
                             Text(
                                 if (adapter == null) "Connect it with a USB-C cable or OTG adapter. Monitor mode runs on BanaanScan's own driver, without root."
-                                else if (!firmware) "Firmware missing: run tools/mt7921u/push-firmware.sh on your computer once."
+                                else if (!firmware) "Firmware missing from this build: run tools/mt7921u/push-firmware.sh on your computer once."
                                 else "Listens only: nothing is transmitted.",
                                 style = MaterialTheme.typography.bodySmall,
                             )

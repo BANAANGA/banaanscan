@@ -26,6 +26,8 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
-The chip's firmware files (WIFI_MT7961_patch_mcu_1_2_hdr.bin, WIFI_RAM_CODE_MT7961_1.bin) are not part of this
-repository. They come from the linux-firmware collection under MediaTek's own licence, which has to be checked before
-they are bundled with the app.
+The chip's firmware files (WIFI_MT7961_patch_mcu_1_2_hdr.bin, WIFI_RAM_CODE_MT7961_1.bin) are not covered by the
+licence above. They come from the linux-firmware collection and are bundled with the app in
+app/src/main/assets/mt7921u/ under MediaTek's own licence (LICENCE.mediatek, next to them): redistributable for use
+with devices containing MediaTek chipsets, but not in any form that would put the files under the GPL or LGPL. So the
+app must not be distributed under the GPL or LGPL while it bundles them.

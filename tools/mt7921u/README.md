@@ -44,14 +44,18 @@ traffic, so keep them in the git-ignored `mt7921u-trace/` folder.
 ## On an Android phone
 
 The app's Wi-Fi tab has a **USB adapter** mode that runs this driver through Android's USB host API, without root.
-The firmware isn't bundled with the app yet (its licence still needs checking), so copy it from this computer once,
-with the phone connected and USB debugging on:
+The firmware is bundled with the app (`app/src/main/assets/mt7921u/`, from linux-firmware under MediaTek's licence,
+which allows redistribution for MediaTek devices as long as the app isn't GPL or LGPL). To try a different firmware
+version, push it from this computer; a pushed copy takes precedence over the bundled one:
 
 ```bash
-tools/mt7921u/push-firmware.sh
+FIRMWARE_DIR=/path/to/firmware tools/mt7921u/push-firmware.sh
 ```
 
-Then connect the adapter to the phone (USB-C cable or OTG adapter; a powered hub if the phone can't supply enough
+To update the bundled copy, replace the two `.bin` files in `app/src/main/assets/mt7921u/` and the version lines in
+the `WHENCE` file there.
+
+Connect the adapter to the phone (USB-C cable or OTG adapter; a powered hub if the phone can't supply enough
 power), open **Wi-Fi → USB adapter**, pick a band and tap **Listen**. Each session writes a log and a capture to the
 app's private storage. To read them after reconnecting the phone:
 
