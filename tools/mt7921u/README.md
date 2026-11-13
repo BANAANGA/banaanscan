@@ -60,6 +60,6 @@ power), open **Wi-Fi → USB adapter**, pick a band and tap **Listen**. Each ses
 app's private storage. To read them after reconnecting the phone:
 
 ```bash
-adb shell run-as com.example.banaanscan cat files/mt7921u/log.txt
-adb exec-out run-as com.example.banaanscan cat files/mt7921u/capture.pcap > mt7921u-trace/phone.pcap
+adb shell run-as io.github.banaanga.banaanscan cat files/mt7921u/log.txt
+adb exec-out run-as io.github.banaanga.banaanscan cat files/mt7921u/capture.pcap > mt7921u-trace/phone.pcap
 ```

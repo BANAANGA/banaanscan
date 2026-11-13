@@ -116,7 +116,7 @@ class UsbWifiMonitor(context: Context) {
     private val app = context.applicationContext
     private val usb: UsbManager? = app.getSystemService(UsbManager::class.java)
     val firmwareDir = File(app.filesDir, "mt7921u")
-    /** Readable after a session with `adb shell run-as com.example.banaanscan cat files/mt7921u/log.txt`. */
+    /** Readable after a session with `adb shell run-as io.github.banaanga.banaanscan cat files/mt7921u/log.txt`. */
     val logFile get() = File(firmwareDir, "log.txt")
 
     val adapter = MutableStateFlow<UsbDevice?>(null)

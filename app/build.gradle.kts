@@ -22,7 +22,9 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.banaanscan"
+        // The app's permanent identity on Android: changing it after a release makes installs a different app.
+        // The Kotlin package (namespace) is internal and stays com.example.banaanscan.
+        applicationId = "io.github.banaanga.banaanscan"
         minSdk = 26
         targetSdk = 35
         versionCode = releaseVersion?.let(::versionCodeOf) ?: 2

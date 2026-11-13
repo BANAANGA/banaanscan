@@ -7,7 +7,7 @@ ADB=${ADB:-adb}
 command -v "$ADB" >/dev/null || ADB="$HOME/Android/Sdk/platform-tools/adb"
 SERIAL=${1:-}
 a() { if [ -n "$SERIAL" ]; then "$ADB" -s "$SERIAL" "$@"; else "$ADB" "$@"; fi; }
-PKG=com.example.banaanscan
+PKG=io.github.banaanga.banaanscan
 SRC=${FIRMWARE_DIR:-/lib/firmware/mediatek}
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT

@@ -151,7 +151,7 @@ You need JDK 17 and the Android SDK (platform 35). The Gradle wrapper is include
 Emulators have no USB host, so debug builds can list a simulated Zigbee dongle (`ezsp` or `znp`):
 
 ```bash
-adb shell am start -n com.example.banaanscan/.MainActivity --es simulate_zigbee ezsp
+adb shell am start -n io.github.banaanga.banaanscan/com.example.banaanscan.MainActivity --es simulate_zigbee ezsp
 ```
 
 **Android Studio:** open the project folder and press Run.
