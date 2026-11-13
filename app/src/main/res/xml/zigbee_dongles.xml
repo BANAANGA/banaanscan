@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- USB IDs of common Zigbee coordinators. Keep in sync with UsbDongles.KNOWN. -->
+<!-- USB devices BanaanScan can use: Zigbee coordinators (keep in sync with ZigbeeScanner KNOWN) and the MT7921U. -->
 <resources>
     <usb-device vendor-id="4292" product-id="60000" /> <!-- 10C4:EA60 CP210x: ZBDongle-P, SkyConnect, ZBT-1 -->
     <usb-device vendor-id="6790" product-id="21972" /> <!-- 1A86:55D4 CH9102: ZBDongle-E -->
@@ -7,4 +7,5 @@
     <usb-device vendor-id="1105" product-id="5800" />  <!-- 0451:16A8 CC2531 -->
     <usb-device vendor-id="1105" product-id="48883" /> <!-- 0451:BEF3 CC13x2/CC26x2 LaunchPad -->
     <usb-device vendor-id="7409" product-id="48" />    <!-- 1CF1:0030 ConBee II -->
+    <usb-device vendor-id="3725" product-id="31073" /> <!-- 0E8D:7961 MediaTek MT7921U Wi-Fi adapter -->
 </resources>

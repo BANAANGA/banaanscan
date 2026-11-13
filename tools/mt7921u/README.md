@@ -16,7 +16,7 @@ chip directly over USB, so on Android it won't need root. It's developed on a Li
 | Load the ROM patch and firmware, ask the chip about itself | Works on a real adapter (about 120 ms) |
 | Monitor mode, channel switching, receiving frames | Works on 2.4, 5 and 6 GHz; heard every network Linux heard |
 | Signal strength | Within about 2 dB of Linux on 2.4 and 5 GHz, about 5 dB lower on 6 GHz (not yet explained) |
-| Android | Not started |
+| Android (no root) | Works: Wi-Fi tab → USB adapter. Tested on a Galaxy S10 (Android 12) on 2.4, 5 and 6 GHz |
 
 ## One-time setup: let your user open the adapter
 
@@ -40,3 +40,22 @@ mt7921u-pc/build/install/mt7921u-pc/bin/mt7921u-pc --monitor --channels=2437,518
 It takes the adapter from the Linux driver while it runs and gives it back afterwards; if that fails, replug the
 adapter. It uses the firmware in `/lib/firmware/mediatek`. It never transmits. Captures contain nearby devices'
 traffic, so keep them in the git-ignored `mt7921u-trace/` folder.
+
+## On an Android phone
+
+The app's Wi-Fi tab has a **USB adapter** mode that runs this driver through Android's USB host API, without root.
+The firmware isn't bundled with the app yet (its licence still needs checking), so copy it from this computer once,
+with the phone connected and USB debugging on:
+
+```bash
+tools/mt7921u/push-firmware.sh
+```
+
+Then connect the adapter to the phone (USB-C cable or OTG adapter; a powered hub if the phone can't supply enough
+power), open **Wi-Fi → USB adapter**, pick a band and tap **Listen**. Each session writes a log and a capture to the
+app's private storage. To read them after reconnecting the phone:
+
+```bash
+adb shell run-as com.example.banaanscan cat files/mt7921u/log.txt
+adb exec-out run-as com.example.banaanscan cat files/mt7921u/capture.pcap > mt7921u-trace/phone.pcap
+```

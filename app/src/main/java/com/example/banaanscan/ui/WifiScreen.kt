@@ -42,6 +42,19 @@ import com.example.banaanscan.data.WifiNetwork
 
 @Composable
 fun WifiScreen(vm: MainViewModel) {
+    // The phone's own Wi-Fi can only scan; an MT7921U adapter adds real monitor mode.
+    var usbAdapter by rememberSaveable { mutableStateOf(false) }
+    Column {
+        Row(Modifier.padding(start = 12.dp, bottom = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            FilterChip(selected = !usbAdapter, onClick = { usbAdapter = false }, label = { Text("Phone") })
+            FilterChip(selected = usbAdapter, onClick = { usbAdapter = true }, label = { Text("USB adapter") })
+        }
+        if (usbAdapter) UsbAdapterSection(vm) else PhoneWifiScan(vm)
+    }
+}
+
+@Composable
+private fun PhoneWifiScan(vm: MainViewModel) {
     val context = LocalContext.current
     val results by vm.wifi.results.collectAsStateWithLifecycle()
     val status by vm.wifi.status.collectAsStateWithLifecycle()

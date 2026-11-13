@@ -9,6 +9,8 @@ import com.example.banaanscan.scan.BluetoothScanner
 import com.example.banaanscan.scan.LanScanner
 import com.example.banaanscan.scan.WifiScanner
 import com.example.banaanscan.ui.ThemeMode
+import com.example.banaanscan.wifimon.ChannelPlan
+import com.example.banaanscan.wifimon.UsbWifiMonitor
 import com.example.banaanscan.zigbee.UsbDongle
 import com.example.banaanscan.zigbee.ZigbeeDebug
 import com.example.banaanscan.zigbee.ZigbeeScanner
@@ -22,6 +24,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     val bt = BluetoothScanner(app)
     val lan = LanScanner(app)
     val zigbee = ZigbeeScanner(app)
+    val wifiMonitor = UsbWifiMonitor(app)
     val index = DeviceIndex(app)
 
     private val prefs = app.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
@@ -33,6 +36,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     val ouiBusy = MutableStateFlow(false)
     private var lanJob: Job? = null
     private var zigbeeJob: Job? = null
+    private var wifiMonitorJob: Job? = null
     private var simulatedKind: String? = null
 
     init {
@@ -96,6 +100,15 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun startWifiMonitor(plan: ChannelPlan) {
+        if (wifiMonitorJob?.isActive == true) return
+        wifiMonitorJob = viewModelScope.launch { wifiMonitor.run(plan) }
+    }
+
+    fun stopWifiMonitor() {
+        wifiMonitorJob?.cancel()
+    }
+
     fun stopZigbee() {
         zigbeeJob?.cancel()
     }
@@ -109,6 +122,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
 
     override fun onCleared() {
         zigbee.close()
+        wifiMonitor.close()
         bt.stop()
         wifi.stop()
     }
