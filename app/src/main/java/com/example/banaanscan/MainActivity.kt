@@ -46,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
@@ -145,7 +146,10 @@ private fun BanaanScanApp(vm: MainViewModel, themeMode: ThemeMode) {
                         onClick = { tab = t },
                         icon = { Icon(t.icon, contentDescription = null) },
                         // Six tabs leave little room: keep labels on one line.
-                        label = { Text(t.label, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) },
+                        label = {
+                            // Phones with wider system fonts (Samsung) cut "Bluetooth" off at the default size.
+                            Text(t.label, maxLines = 1, softWrap = false, fontSize = 10.sp, letterSpacing = 0.sp)
+                        },
                     )
                 }
             }
