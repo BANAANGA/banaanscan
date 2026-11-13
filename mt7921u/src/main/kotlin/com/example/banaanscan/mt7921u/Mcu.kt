@@ -15,6 +15,18 @@ object Mcu {
     const val PATCH_FINISH_REQ = 0x07
     const val PATCH_SEM_CONTROL = 0x10
     const val GET_NIC_CAPAB = 0x8a // a "CE" command
+    const val EXT_CID = 0xed
+    const val CE_SET_RX_FILTER = 0x0a
+    const val CE_CHIP_CONFIG = 0xca
+
+    // Extended commands, sent as EXT_CID with this second ID
+    const val EXT_EFUSE_BUFFER_MODE = 0x21
+    const val EXT_MAC_INIT_CTRL = 0x46
+
+    // Unified commands
+    const val UNI_DEV_INFO_UPDATE = 0x01
+    const val UNI_BSS_INFO_UPDATE = 0x02
+    const val UNI_SNIFFER = 0x24
 
     // Patch semaphore replies
     const val PATCH_NOT_DL_SEM_FAIL = 0
@@ -23,6 +35,8 @@ object Mcu {
     const val PATCH_REL_SEM_SUCCESS = 3
 
     const val TXD_SIZE = 64      // hardware TXD (32) + MCU header (32)
+    const val UNI_TXD_SIZE = 48  // hardware TXD (32) + unified MCU header (16)
+    private const val UNI_EXT_ACK = 0x07
     const val RXD_SIZE = 36      // hardware RXD (24) + MCU event header (12)
     private const val PKT_ID = 0xa0
     private const val Q_SET = 1
@@ -59,6 +73,26 @@ object Mcu {
         b.put(0)                  // s2d_index: host to N9
         b.put((if (extCid != 0) 1 else 0).toByte())
         b.position(TXD_SIZE)
+        b.put(payload)
+        return usbFrame(b.array())
+    }
+
+    /** A command in the newer "unified" format, which has a 16-bit command ID and no set/query field. */
+    fun uniCommand(cid: Int, seq: Int, payload: ByteArray): ByteArray {
+        val b = le(UNI_TXD_SIZE + payload.size)
+        b.putInt((UNI_TXD_SIZE + payload.size) or (TX_TYPE_CMD shl 23) or (MCU_PORT_RX_Q0 shl 25))
+        b.putInt((1 shl 31) or (HDR_FORMAT_CMD shl 16))
+        b.position(32)
+        b.putShort((UNI_TXD_SIZE - 32 + payload.size).toShort())
+        b.putShort(cid.toShort())
+        b.put(0)
+        b.put(PKT_ID.toByte())
+        b.put(0)                  // frag_n
+        b.put(seq.toByte())
+        b.putShort(0)             // checksum
+        b.put(0)                  // s2d_index: host to N9
+        b.put(UNI_EXT_ACK.toByte())
+        b.position(UNI_TXD_SIZE)
         b.put(payload)
         return usbFrame(b.array())
     }

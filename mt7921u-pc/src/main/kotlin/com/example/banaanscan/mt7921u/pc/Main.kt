@@ -1,5 +1,7 @@
 package com.example.banaanscan.mt7921u.pc
 
+import com.example.banaanscan.mt7921u.Channel
+import com.example.banaanscan.mt7921u.Monitor
 import com.example.banaanscan.mt7921u.Mt7921Exception
 import com.example.banaanscan.mt7921u.Mt7921u
 import com.example.banaanscan.mt7921u.PatchFile
@@ -10,7 +12,10 @@ import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.PointerByReference
+import java.io.DataOutputStream
 import java.io.File
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import kotlin.system.exitProcess
 
 /** The handful of libusb-1.0 calls the prototype needs. */
@@ -87,8 +92,40 @@ private fun readFirmware(path: String): ByteArray {
 
 private const val FIRMWARE_DIR = "/lib/firmware/mediatek"
 
+/** Writes frames as a pcap file with a minimal radiotap header (flags, channel, signal), for Wireshark/tshark. */
+private class PcapWriter(file: File) : AutoCloseable {
+    private val out = DataOutputStream(file.outputStream().buffered())
+
+    init {
+        out.write(ByteBuffer.allocate(24).order(ByteOrder.LITTLE_ENDIAN)
+            .putInt(0xa1b2c3d4.toInt()).putShort(2).putShort(4).putInt(0).putInt(0).putInt(65535).putInt(127).array())
+    }
+
+    fun write(freqMhz: Int, rssi: Int?, fcsError: Boolean, frame: ByteArray) {
+        val rt = ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN)
+        rt.put(0).put(0).putShort(16).putInt((1 shl 1) or (1 shl 3) or (if (rssi != null) 1 shl 5 else 0))
+        rt.put((if (fcsError) 0x40 else 0).toByte()).put(0)
+        rt.putShort(freqMhz.toShort()).putShort((if (freqMhz < 3000) 0x0080 else 0x0100).toShort())
+        rt.put((rssi ?: 0).toByte())
+        val now = System.currentTimeMillis()
+        out.write(ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN)
+            .putInt((now / 1000).toInt()).putInt(((now % 1000) * 1000).toInt()).putInt(16 + frame.size).putInt(16 + frame.size).array())
+        out.write(rt.array())
+        out.write(frame)
+    }
+
+    override fun close() = out.close()
+}
+
+private val FRAME_TYPES = arrayOf("mgmt", "ctrl", "data", "ext")
+
 fun main(args: Array<String>) {
     val dryRun = "--dry-run" in args
+    val monitor = "--monitor" in args
+    val channels = (args.firstOrNull { it.startsWith("--channels=") }?.substringAfter('=') ?: "2437,5180,6135")
+        .split(',').map { Channel.fromFreq(it.trim().toInt()) }
+    val seconds = args.firstOrNull { it.startsWith("--seconds=") }?.substringAfter('=')?.toInt() ?: 15
+    val pcapPath = args.firstOrNull { it.startsWith("--pcap=") }?.substringAfter('=') ?: "mt7921u-monitor.pcap"
     val trace = "--trace" in args
     val patchPath = args.firstOrNull { it.startsWith("--patch=") }?.substringAfter('=') ?: "$FIRMWARE_DIR/WIFI_MT7961_patch_mcu_1_2_hdr.bin.zst"
     val ramPath = args.firstOrNull { it.startsWith("--ram=") }?.substringAfter('=') ?: "$FIRMWARE_DIR/WIFI_RAM_CODE_MT7961_1.bin.zst"
@@ -124,11 +161,13 @@ fun main(args: Array<String>) {
         usb.libusb_reset_device(handle).let { if (it != 0) println("USB reset: ${usb.libusb_error_name(it)}") }
 
         val started = System.currentTimeMillis()
-        val result = Mt7921u(LibUsbIo(handle, trace)) { println("  $it") }.bringUp(patch, ram)
+        val chip = Mt7921u(LibUsbIo(handle, trace)) { println("  $it") }
+        val result = chip.bringUp(patch, ram)
         println("Chip 0x%04x rev 0x%02x is running firmware %s after %d ms".format(result.chipId, result.revision, result.firmware, System.currentTimeMillis() - started))
         println("The chip reports: MAC address %s, 6 GHz %s, %d capability record(s)".format(
             result.capabilities.macAddress ?: "unknown", result.capabilities.has6Ghz?.let { if (it) "supported" else "not supported" } ?: "unknown",
             result.capabilities.elements))
+        if (monitor) listen(chip, channels, seconds, File(pcapPath))
     } catch (e: Exception) {
         System.err.println("FAILED: ${e.message}")
         exit = 1
@@ -142,4 +181,33 @@ fun main(args: Array<String>) {
         usb.libusb_exit(ctx.value)
     }
     exitProcess(exit)
+}
+
+/** Listens on each channel in turn and saves everything heard, like the reference capture script does with Linux. */
+private fun listen(chip: Mt7921u, channels: List<Channel>, seconds: Int, pcap: File) {
+    val mon = Monitor(chip)
+    mon.start(channels.first())
+    PcapWriter(pcap).use { writer ->
+        channels.forEachIndexed { i, channel ->
+            if (i > 0) mon.tune(channel)
+            val types = IntArray(4)
+            var frames = 0
+            var bad = 0
+            val signals = ArrayList<Int>()
+            val end = System.currentTimeMillis() + seconds * 1000L
+            while (System.currentTimeMillis() < end) {
+                val f = mon.receive(200) ?: continue
+                frames++
+                if (f.fcsError) bad++
+                f.rssi?.let { signals += it }
+                if (f.data.isNotEmpty()) types[(f.data[0].toInt() shr 2) and 3]++
+                if (f.freqMhz != channel.freqMhz) println("  frame reported on ${f.freqMhz} MHz while tuned to ${channel.freqMhz} MHz")
+                writer.write(f.freqMhz, f.rssi, f.fcsError, f.data)
+            }
+            println("%d MHz (%s ch %d): %d frames in %ds — %s%s".format(channel.freqMhz, channel.band, channel.number, frames, seconds,
+                types.withIndex().filter { it.value > 0 }.joinToString { "${it.value} ${FRAME_TYPES[it.index]}" }.ifEmpty { "nothing" },
+                if (signals.isEmpty()) "" else ", mean signal %d dBm".format(signals.average().toInt()) + if (bad > 0) ", $bad with errors" else ""))
+        }
+    }
+    println("Saved to ${pcap.absolutePath}")
 }

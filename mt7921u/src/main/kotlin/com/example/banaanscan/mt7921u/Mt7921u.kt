@@ -14,6 +14,9 @@ interface UsbIo {
     fun bulkIn(endpoint: Int, buffer: ByteArray, timeoutMs: Int): Int
 }
 
+/** Lets the monitor read received frames from the same endpoint the driver uses. */
+internal fun Mt7921u.readRaw(buffer: ByteArray, timeoutMs: Int): Int = usbIo.bulkIn(Mt7921u.EP_IN_PKT_RX, buffer, timeoutMs)
+
 class Mt7921Exception(message: String) : Exception(message)
 
 data class Capabilities(val macAddress: String?, val has6Ghz: Boolean?, val elements: Int)
@@ -24,7 +27,8 @@ data class BringUp(val chipId: Int, val revision: Int, val patchBuild: String, v
  * Starts an MT7921U from power-on to running firmware, following the Linux driver's probe sequence.
  * This stage only loads firmware and asks the chip about itself: the radio isn't used and nothing is transmitted.
  */
-class Mt7921u(private val usb: UsbIo, private val log: (String) -> Unit = {}) {
+class Mt7921u(private val usb: UsbIo, internal val log: (String) -> Unit = {}) {
+    internal val usbIo: UsbIo get() = usb
     private var seq = 0
     private val rxBuffer = ByteArray(32 * 1024)
 
@@ -153,16 +157,30 @@ class Mt7921u(private val usb: UsbIo, private val log: (String) -> Unit = {}) {
     }
 
     /** Sends a command; if [wait], returns the reply with the same sequence number. */
-    fun send(cid: Int, payload: ByteArray = ByteArray(0), wait: Boolean = true, ce: Boolean = false, timeoutMs: Long = 3000): Mcu.Event? {
+    fun send(cid: Int, payload: ByteArray = ByteArray(0), wait: Boolean = true, ce: Boolean = false, extCid: Int = 0,
+             timeoutMs: Long = 3000): Mcu.Event? =
+        exchange(cid, wait, timeoutMs) { Mcu.command(cid, it, payload, extCid = extCid, ce = ce) }
+
+    fun sendUni(cid: Int, payload: ByteArray, wait: Boolean = true, timeoutMs: Long = 3000): Mcu.Event? =
+        exchange(cid, wait, timeoutMs) { Mcu.uniCommand(cid, it, payload) }
+
+    /** Frames received while waiting for a reply; the monitor picks these up so none are lost. */
+    internal val pendingFrames = ArrayDeque<ByteArray>()
+
+    private fun exchange(cid: Int, wait: Boolean, timeoutMs: Long, build: (Int) -> ByteArray): Mcu.Event? {
         val s = nextSeq()
-        val frame = Mcu.command(cid, s, payload, ce = ce)
+        val frame = build(s)
         if (usb.bulkOut(EP_OUT_INBAND_CMD, frame) != frame.size) throw Mt7921Exception("Sending command 0x%02x failed".format(cid))
         if (!wait) return null
         val end = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < end) {
             val n = usb.bulkIn(EP_IN_PKT_RX, rxBuffer, 200)
             if (n <= 0) continue
-            val event = Mcu.parseEvent(rxBuffer, n) ?: continue
+            val event = Mcu.parseEvent(rxBuffer, n)
+            if (event == null) {
+                if (pendingFrames.size < 1000) pendingFrames.addLast(rxBuffer.copyOf(n))
+                continue
+            }
             if (event.seq == s) return event
             log("  (ignored event 0x%02x seq %d)".format(event.eid, event.seq))
         }
