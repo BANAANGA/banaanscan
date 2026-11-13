@@ -1,3 +1,16 @@
+// Release builds take their version from the git tag (vX.Y.Z, passed as BANAANSCAN_VERSION) and are signed with the
+// release key from environment variables, which the release workflow fills from GitHub secrets. Without them, a
+// release build is simply unsigned.
+val releaseVersion: String? = System.getenv("BANAANSCAN_VERSION")?.removePrefix("v")
+val keystoreFile: String? = System.getenv("RELEASE_KEYSTORE_FILE")
+
+/** 1.2.3 -> 10203, so every new tag counts as an update. */
+fun versionCodeOf(version: String): Int {
+    val parts = version.split('.').map { it.takeWhile(Char::isDigit).toIntOrNull() ?: 0 } + listOf(0, 0, 0)
+    require(parts[1] < 100 && parts[2] < 100) { "Minor and patch versions must stay below 100: $version" }
+    return parts[0] * 10000 + parts[1] * 100 + parts[2]
+}
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -12,13 +25,25 @@ android {
         applicationId = "com.example.banaanscan"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = releaseVersion?.let(::versionCodeOf) ?: 2
+        versionName = releaseVersion ?: "0.2.0"
+    }
+
+    signingConfigs {
+        if (keystoreFile != null) {
+            create("release") {
+                storeFile = file(keystoreFile)
+                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (keystoreFile != null) signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

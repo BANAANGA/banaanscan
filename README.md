@@ -111,6 +111,35 @@ private storage. **Lookup → Update now** refreshes it. To work fully offline, 
 * For Zigbee: a supported USB stick, plus a phone with USB-OTG host support. Android asks for permission
   the first time you scan with a stick.
 
+## Install with Obtainium
+
+[Obtainium](https://github.com/ImranR98/Obtainium) installs BanaanScan from this repository's GitHub Releases and
+keeps it up to date. In Obtainium, tap **Add app** and enter:
+
+```
+https://github.com/BANAANGA/banaanscan
+```
+
+Or open this link on the phone: `obtainium://add/https://github.com/BANAANGA/banaanscan`
+
+Every release is signed with the same key. Its SHA-256 certificate fingerprint is
+`67:E6:1D:67:71:BC:03:2C:6D:D9:BD:FD:1A:B4:34:41:61:8A:22:4F:EB:DF:30:6D:94:AA:68:FA:7E:4A:75:5A`; Android won't
+install an update signed with anything else.
+
+### Publishing a release
+
+Push a version tag. The release workflow runs the tests, builds and signs the APK, and attaches it to a GitHub
+Release:
+
+```bash
+git tag v0.3.0 && git push origin v0.3.0
+```
+
+The tag sets the version: `v1.2.3` becomes version name `1.2.3` and version code `10203`, so every new tag counts as
+an update. The signing key comes from the repository secrets `RELEASE_KEYSTORE_BASE64`, `RELEASE_KEYSTORE_PASSWORD`,
+`RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWORD`; keep a private backup of the key, because losing it means installed
+copies can't be updated.
+
 ## Build and install
 
 You need JDK 17 and the Android SDK (platform 35). The Gradle wrapper is included. To run the unit tests:
