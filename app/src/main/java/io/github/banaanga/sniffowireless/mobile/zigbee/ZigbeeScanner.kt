@@ -145,7 +145,7 @@ class ZigbeeScanner(context: Context, private val hub: Hub? = null) {
                 device = device,
                 id = "%04X:%04X".format(device.vendorId, device.productId),
                 name = known?.name ?: device.productName ?: "USB serial device",
-                blocker = known?.blocker,
+                blocker = if (hub != null && device.deviceName in hub.loraSniffers) "This is a LoRa board with the lora-sniffer firmware: use it on the LoRa page." else known?.blocker,
                 ezspFirst = known?.ezspFirst == true,
             )
         }

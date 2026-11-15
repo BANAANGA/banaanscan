@@ -2,7 +2,7 @@
 """Generate sniffo-core's test fixtures (and the Bluetooth company list) from a sniffowireless checkout.
 
 sniffo-core ports parts of sniffowireless to Kotlin: how Wi-Fi frames, Bluetooth HCI events and Zigbee frames become
-observations. These fixtures are sniffowireless's own answers for a set of synthetic inputs, so the Kotlin tests fail
+observations, and how LoRa frames are recognised. These fixtures are sniffowireless's own answers for a set of synthetic inputs, so the Kotlin tests fail
 when the port drifts. Run it again after updating sniffowireless:
 
     python3 -m venv /tmp/sniffo-venv && /tmp/sniffo-venv/bin/pip install -r ../sniffowireless/requirements.txt
@@ -29,7 +29,8 @@ sys.path.insert(0, src)
 from scapy.layers.dot11 import (Dot11, Dot11AssoReq, Dot11AssoResp, Dot11Auth, Dot11Beacon, Dot11Deauth,  # noqa: E402
                                 Dot11Disas, Dot11Elt, Dot11ProbeReq, Dot11ProbeResp, Dot11QoS, Dot11ReassoReq, RadioTap)
 
-from sniffowireless import bluetooth, config, oui, wifi, zigbee_radio  # noqa: E402
+from sniffowireless import bluetooth, config, lora_protocols, meshtastic, oui, wifi, zigbee_radio  # noqa: E402
+from sniffowireless.lora import parse_rx  # noqa: E402
 
 TS = 1_700_000_000.0
 
@@ -423,6 +424,138 @@ def channel_cases():
     return {"specs": out, "labels": labels}
 
 
+# ------------------------------------------------------------------ LoRa (lora_protocols.py, meshtastic.py, lora.parse_rx)
+def profile_dict(p):
+    return {"name": p.name, "label": p.label, "freq": p.freq, "bw": p.bw, "sf": p.sf, "cr": p.cr, "sync": p.sync,
+            "preamble": p.preamble, "hint": p.hint, "describe": p.describe()}
+
+
+def mt_frame(to=0xFFFFFFFF, frm=0x1A2B3C4D, pid=0xDEADBEEF, hop_limit=3, hop_start=3, want_ack=False, via_mqtt=False, chan=0x08,
+             next_hop=0, relay=0x4D, body=bytes(range(20))):
+    flags = hop_limit | (8 if want_ack else 0) | (0x10 if via_mqtt else 0) | (hop_start << 5)
+    return struct.pack("<IIIBBBB", to, frm, pid, flags, chan, next_hop, relay) + body
+
+
+def mc_advert(name=b"Garage Repeater", ntype=2, location=True, route=1, hops=0, hsize=1, extra=0):
+    flags = ntype | (0x10 if location else 0) | (0x80 if name else 0) | extra
+    body = bytes(range(32)) + struct.pack("<I", 1_700_000_000) + bytes(64) + bytes([flags]) + (bytes(8) if location else b"") \
+        + (bytes(2) if extra & 0x20 else b"") + (bytes(2) if extra & 0x40 else b"") + name
+    return bytes([(4 << 2) | route, hops | ((hsize - 1) << 6)]) + bytes(range(hops * hsize)) + body
+
+
+def lw_uplink(dev_addr=0x26011BDA, fcnt=1234, fport=1, payload=b"\x01\x02\x03", mtype=2, fopts=b"", adr=True, ack=False):
+    fctrl = (0x80 if adr else 0) | (0x20 if ack else 0) | len(fopts)
+    return bytes([mtype << 5]) + struct.pack("<I", dev_addr) + bytes([fctrl]) + struct.pack("<H", fcnt) + fopts + bytes([fport]) + payload + b"\xAA\xBB\xCC\xDD"
+
+
+def varint(v):
+    out = bytearray()
+    while True:
+        b = v & 0x7F
+        v >>= 7
+        out.append(b | (0x80 if v else 0))
+        if not v:
+            return bytes(out)
+
+
+def pb(num, value):
+    if isinstance(value, int):
+        return varint(num << 3) + varint(value)
+    if isinstance(value, bytes):
+        return varint(num << 3 | 2) + varint(len(value)) + value
+    return varint(num << 3 | 5) + struct.pack("<f", value)
+
+
+def fixed32(num, v):
+    return varint(num << 3 | 5) + struct.pack("<i", v)
+
+
+def mt_packet(plain, frm=0x1A2B3C4D, pid=0xCAFEF00D, key=meshtastic.DEFAULT_KEY):
+    body = meshtastic.aes_ctr(key, struct.pack("<QI", pid, frm) + bytes(4), plain) if key else plain
+    return struct.pack("<IIIBBBB", 0xFFFFFFFF, frm, pid, 3 | (3 << 5), 8, 0, 0x4D) + body
+
+
+def lora_cases():
+    import random
+    rnd = random.Random(1234)
+    specs = [("", "EU868"), ("", "US915"), ("", "ANZ"), ("", "XX"), ("meshtastic:EU868", None), ("meshtastic:us:mediumfast", None),
+             ("meshtastic:EU433:ShortTurbo", None), ("meshtastic:XX", None), ("meshtastic:EU868:Nope", None), ("lorawan:EU868", None),
+             ("lorawan:US915:7-10", None), ("lorawan:IN865:7", None), ("lorawan:au915:12", None), ("lorawan:EU868:13", None),
+             ("lorawan:KR920:7-8", None), ("mesh=868.3/125/7/5/0x34", None), ("Mine=869.525/250/11/5/43/16", None),
+             ("a=868/62.5/8/5/0x12", None), ("x=1000/125/7/5/0x12", None), ("bad name=868/125/7/5/0x12", None),
+             ("x=868/123/7/5/0x12", None), ("x=868/125/7/5", None), ("x=868/125/7/5/zz", None),
+             ("meshtastic-eu868,meshcore-eu868", None), ("lorawan-eu868, lorawan:eu868", None), ("nonsense", None),
+             ("LoRa-APRS-433 , meshcore-nz-narrow", None), (" , ", "EU868")]
+    profiles = []
+    for spec, region in specs:
+        try:
+            got = [profile_dict(p) for p in (lora_protocols.parse_profiles(spec, region) if region else lora_protocols.parse_profiles(spec))]
+            profiles.append({"spec": spec, "region": region, "profiles": got})
+        except ValueError:
+            profiles.append({"spec": spec, "region": region, "error": True})
+    freqs = {f"{r}/{p}": lora_protocols.meshtastic_frequency(r, p) for r in lora_protocols.MESHTASTIC_REGIONS for p in lora_protocols.MESHTASTIC_PRESETS}
+    rx = ["RX,1234,869.5250,250.0,11,0x2B,-97.5,6.25,-1200,4,deadbeef", "RX,1,868.1000,125.0,7,0x34,-120.0,-12.50,15,2,AbCd",
+          "RX,1,868.1,125,7,43,-80,1,0,1,00", "RX,1,868.1,125,7,0x34,-80,1,0,3,abcd", "RX,1,868.1,125,7,0x34,-80,1,0,0,",
+          "RX,1,868.1,125,7,0x34,-80,1,0,1,zz", "RX,1,868.1,125,seven,0x34,-80,1,0,1,00", "STAT,1,2,3", "PONG", "RX,1,2"]
+    frames = [
+        (mt_frame(), 0x2B, "meshtastic"), (mt_frame(), 0x2B, None), (mt_frame(), 0x12, None), (mt_frame(), 0x34, None),
+        (mt_frame(), 0x12, "meshtastic"), (mt_frame(to=0x0C0FFEE0, hop_limit=1, want_ack=True, via_mqtt=True, next_hop=0xE0), 0x2B, None),
+        (mt_frame(hop_start=0), 0x2B, None), (mt_frame(hop_limit=7, hop_start=2), 0x2B, None), (mt_frame()[:16], 0x2B, None),
+        (mt_frame(frm=0, pid=0, to=0), 0x2B, None), (mt_frame(frm=0xFFFFFFFF), 0x2B, None),
+        (mc_advert(), 0x12, "meshcore"), (mc_advert(), 0x12, None), (mc_advert(name=b"Hut \xe2\x9c\x93"), 0x12, None),
+        (mc_advert(name=b""), 0x12, "meshcore"), (mc_advert(ntype=1, location=False, route=0, hops=2), 0x12, "meshcore"),
+        (mc_advert(hops=3, hsize=2, extra=0x60), 0x12, "meshcore"), (mc_advert(ntype=9), 0x12, "meshcore"),
+        (bytes([(2 << 2) | 1, 2, 0x10, 0x20, 0xA1, 0x4F, 0xBE, 0xEF]) + bytes(32), 0x12, "meshcore"),
+        (bytes([(3 << 2) | 2, 0]) + bytes(4), 0x12, "meshcore"), (bytes([(7 << 2) | 1, 0, 0xA1]) + bytes(40), 0x12, "meshcore"),
+        (bytes([(5 << 2) | 1, 1, 0x33, 0x11, 0, 0, 0]), 0x12, "meshcore"), (bytes([(11 << 2) | 2, 0, 0x90]), 0x12, "meshcore"),
+        (bytes([(12 << 2) | 1, 0]) + bytes(8), 0x12, "meshcore"), (bytes([(15 << 2) | 1, 0x41]) + bytes(80), 0x12, "meshcore"),
+        (bytes([(2 << 2) | 0, 0, 0, 0]), 0x12, "meshcore"),
+        (lw_uplink(), 0x34, None), (lw_uplink(), 0x34, "lorawan"), (lw_uplink(), 0x12, "lorawan"), (lw_uplink(), 0x12, None),
+        (lw_uplink(mtype=3, ack=True), 0x34, None), (lw_uplink(mtype=4, fopts=b"\x02\x03"), 0x34, None),
+        (lw_uplink(mtype=5, fopts=bytes(15), payload=b""), 0x34, None), (lw_uplink(payload=b"")[:-1], 0x34, None),
+        (bytes([0x00]) + bytes.fromhex("70b3d57ed0000000")[::-1] + bytes.fromhex("0004a30b001a2b3c")[::-1] + b"\x12\x34\x00\x11\x22\x33", 0x34, None),
+        (bytes([0x20]) + bytes(16), 0x34, None), (bytes([0x20]) + bytes(20), 0x34, None), (bytes([0xC0]) + bytes(14), 0x34, None),
+        (bytes([0xE0]) + bytes(14), 0x34, None), (bytes([0x41]) + bytes(14), 0x34, None),
+        (b"<\xff\x01PA3ABC-9>APLRT1,WIDE1-1:!5207.00N/00455.00E-testing", 0x12, "lora-aprs"),
+        (b"<\xff\x01PA3ABC>APRS::PB0XYZ   :hello", 0x12, None), (b"<\xff\x01PA3ABC>APRS,WIDE1-1*,WIDE2-1:>status", 0x12, None),
+        (b"<\xff\x01not a packet", 0x12, None), (b"<\xff\x01ab", 0x12, None), (b"<\xff\x01X>Y:_weather\nline", 0x12, None),
+        (b"hello world, plain text", 0x12, None), (b"\x00\x01", 0x12, None), (b"", 0x12, None), (bytes(range(256))[:200], 0x12, None),
+    ]
+    for _ in range(400):
+        n = rnd.randrange(0, 60)
+        frames.append((bytes(rnd.randrange(256) for _ in range(n)), rnd.choice([0x12, 0x2B, 0x34, 0x77]),
+                       rnd.choice([None, "meshtastic", "meshcore", "lorawan", "lora-aprs"])))
+    for _ in range(100):  # structured noise: plausible first bytes
+        head = rnd.choice([b"<\xff\x01", bytes([rnd.randrange(8) << 5]), bytes([(rnd.randrange(16) << 2) | rnd.randrange(4), rnd.randrange(256)])])
+        frames.append((head + bytes(rnd.randrange(256) for _ in range(rnd.randrange(0, 120))), rnd.choice([0x12, 0x2B, 0x34]),
+                       rnd.choice([None, "meshcore", "lorawan"])))
+    classify = [{"hex": f.hex(), "sync": sync, "hint": hint, "result": lora_protocols.classify(f, sync, hint)} for f, sync, hint in frames]
+
+    position = fixed32(1, 521234567) + fixed32(2, 49876543) + pb(3, 12) + pb(19, 7) + pb(23, 16) + pb(15, 3)
+    packets = [
+        mt_packet(pb(1, 1) + pb(2, "Hello mesh, test 1 2 3 \u2713".encode())), mt_packet(pb(1, 3) + pb(2, position)),
+        mt_packet(pb(1, 3) + pb(2, fixed32(1, -335000000) + fixed32(2, -700000000) + pb(3, (1 << 32) - 5))),
+        mt_packet(pb(1, 4) + pb(2, pb(1, b"!1a2b3c4d") + pb(2, b"Garage node") + pb(3, b"GRG") + pb(5, 43) + pb(7, 2))),
+        mt_packet(pb(1, 4) + pb(2, pb(2, b"x") + pb(5, 200) + pb(7, 99))),
+        mt_packet(pb(1, 67) + pb(2, pb(1, 1700000000) + pb(2, pb(1, 87) + pb(2, 4.05) + pb(3, 12.5) + pb(4, 0.33) + pb(5, 3600)))),
+        mt_packet(pb(1, 67) + pb(2, pb(3, pb(1, 21.5) + pb(2, 45.0) + pb(3, 1013.25)))),
+        mt_packet(pb(1, 8) + pb(2, fixed32(2, 521000000) + fixed32(3, 49000000) + pb(6, b"Camp") + pb(7, b"Meet here"))),
+        mt_packet(pb(1, 1) + pb(2, b"no key at all"), key=None), mt_packet(pb(1, 6) + pb(2, b"admin payload")),
+        mt_packet(pb(1, 1) + pb(2, b"secret"), key=bytes(range(16))), mt_packet(pb(1, 99) + pb(2, b"x")), mt_packet(pb(1, 1)),
+        mt_packet(pb(1, 1) + pb(2, b"\x00\x01\x02\xff\xfe")), mt_packet(pb(1, 3) + pb(2, b"\x0d\x01")),
+        mt_packet(pb(1, 4) + pb(2, b"\x12\xff\xff\x03")), mt_packet(pb(1, 1) + pb(2, b"\xc3\x28")), mt_packet(pb(1, 67) + pb(2, b"\x12\x05\x08")),
+        mt_packet(pb(1, 8) + pb(2, b"\x10")), mt_packet(pb(1, 1) + pb(2, ("long " * 80).encode())), mt_frame(), b"", bytes(17),
+        mt_packet(pb(1, 1) + pb(2, b"tab\tand\nnewline\x07bell")),
+    ]
+    for _ in range(300):
+        packets.append(bytes(rnd.randrange(256) for _ in range(rnd.randrange(0, 80))))
+    decode = [{"hex": p.hex(), "result": meshtastic.decode(p)} for p in packets]
+    airtime = [{"len": n, "sf": sf, "bw": bw, "cr": cr, "preamble": pre, "ms": lora_protocols.airtime_ms(n, sf, bw, cr, pre)}
+               for n, sf, bw, cr, pre in [(20, 7, 125, 5, 8), (50, 11, 250, 5, 16), (255, 12, 125, 8, 8), (1, 7, 500, 5, 8), (30, 8, 62.5, 5, 16)]]
+    return {"profiles": profiles, "meshtastic_freqs": freqs, "rx": [{"line": x, "rx": parse_rx(x)} for x in rx],
+            "classify": classify, "decode": decode, "airtime": airtime}
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     os.makedirs(RES, exist_ok=True)
@@ -432,6 +565,7 @@ def main():
     write("bluetooth.json", {"meta": meta, "events": events, "interval": interval, "ad": ad_cases()})
     write("zigbee.json", {"meta": meta, **zigbee_cases()})
     write("channels.json", {"meta": meta, **channel_cases()})
+    write("lora.json", {"meta": meta, **lora_cases()})
     companies = {f"{k:04x}": v for k, v in sorted(oui._COMPANIES.items())}
     with open(os.path.join(RES, "bt_companies.json"), "w", encoding="utf-8") as f:
         json.dump({"source": f"sniffowireless {git_rev()} (Bluetooth SIG assigned numbers, with its short names)",

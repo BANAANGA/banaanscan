@@ -35,10 +35,12 @@ The phone then works like one of sniffowireless's remote sensors:
   fixtures that sniffowireless's Python produces (see [tools/sniffowireless](tools/sniffowireless/README.md)).
 * **Sources:** the phone's own Wi-Fi scan (access points; with Android 11+ including their information elements) and
   Bluetooth, an MT7921U in monitor mode (access points, clients, probe requests, deauths, channel survey), a USB
-  Bluetooth adapter (every advert, long range, classic inquiry), and a Zigbee stick (network scans, energy, and
-  listening with an EZSP stick that has `mfglib`).
+  Bluetooth adapter (every advert, long range, classic inquiry), a Zigbee stick (network scans, energy, and
+  listening with an EZSP stick that has `mfglib`), and a LoRa board with sniffowireless's lora-sniffer firmware (raw
+  frames, which the server recognises as Meshtastic, MeshCore, LoRaWAN or LoRa APRS, as it does for its own boards).
 * **Settings from the server:** the channels and hop time set under **Settings → Wi-Fi channels**, and the channels,
-  scan interval and listening under **Settings → Zigbee**, reach the phone with its next upload and are applied while it
+  scan interval and listening under **Settings → Zigbee**, and the LoRa profiles and hop time under **Settings → LoRa**,
+  reach the phone with its next upload and are applied while it
   runs; the server shows *applied* once the phone reports the new revision.
 * **Status, load and logs:** each source appears on the server's Sensors page with its state and hardware, with the
   phone's memory, disk and CPU use, and its log lines on the Logs page.
@@ -80,6 +82,7 @@ Zigbee and sniffer results are made up by the simulated dongle in debug builds.<
 | **Wi-Fi** | Lists access points: SSID, BSSID + vendor, signal, band/channel/width, Wi-Fi standard, security, channel usage. Flags hotspots / Wi-Fi Direct printers & TVs. |
 | **Bluetooth** | BLE scan + classic discovery merged per address. Decodes BLE manufacturer data (Apple Continuity, Microsoft, Samsung, Garmin…), service UUIDs and the Bluetooth device class. With a USB Bluetooth adapter: every advertising packet, long range (Coded PHY), and a listen-only mode. |
 | **Zigbee** | Active scan through a USB coordinator: PAN ID, extended PAN ID, channel, signal, whether the network is open for joining, and which routers answered. Silicon Labs sticks also measure interference per channel, and can passively sniff all 802.15.4 traffic: frames per channel, addresses, frame types and a protocol hint. |
+| **LoRa** | Through a Heltec WiFi LoRa 32 V3 with sniffowireless's lora-sniffer firmware: hops over LoRa profiles and recognises Meshtastic, MeshCore, LoRaWAN and LoRa APRS frames the way sniffowireless does. Lists nodes (with names, hardware, positions and telemetry from the public Meshtastic channel) and recent frames. |
 | **LAN** | Subnet sweep (TCP connect + ICMP), then per host: 33 common ports, reverse DNS, NetBIOS name/MAC, mDNS/DNS-SD services + TXT (Apple model IDs, Cast models, printers), SSDP/UPnP description, web page title/Server header. |
 | **Devices** | Every LAN, Bluetooth, Wi-Fi and Zigbee device seen, with first/last seen and sighting count, kept on the phone. Search, filter by type, hide randomized MACs, export CSV, and update the vendor database. |
 | **Sensor** | Sends what the phone and its USB adapters hear to a sniffowireless server (see [Sensor for sniffowireless](#sensor-for-sniffowireless)). |
@@ -135,6 +138,32 @@ sniffowireless-mobile works out the firmware by asking the stick, since the USB 
   interference needs a running network, so it's skipped.
 * **What a scan can't see:** only routers and coordinators answer. Battery sensors stay asleep, and devices
   inside other networks stay hidden. Seeing those would need sniffer firmware on the stick.
+
+### LoRa
+
+LoRa needs a **Heltec WiFi LoRa 32 V3** (ESP32-S3 + SX1262, 863–928 MHz) running sniffowireless's
+[lora-sniffer firmware](https://github.com/BANAANGA/sniffowireless/tree/main/firmware/lora-sniffer). Flash it from the
+sniffowireless web interface (**Settings → LoRa flasher**, in Chrome or Edge on a computer), then plug the board into
+the phone. The firmware has no transmit code: the board only listens.
+
+* **Profiles:** a LoRa radio only hears a network while it is set to that network's frequency, bandwidth, spreading
+  factor and sync word, so the app hops between profiles, as sniffowireless does. The list uses sniffowireless's
+  `LORA_PROFILES` syntax: built-in names (`meshtastic-eu868`, `meshcore-eu868`, `lorawan-eu868`, `lora-aprs-433`…),
+  `meshtastic:<region>[:<preset>]`, `lorawan:<region>[:<sf or range>]`, or your own `name=freq/bw/sf/cr/sync`. Empty
+  means the region's defaults (EU868: Meshtastic LongFast, MeshCore and the three LoRaWAN join channels at SF7).
+* **What you see:** each frame's protocol and how sure the classifier is, who sent it and to whom, hops, signal and
+  SNR. For Meshtastic, the public default channel (whose key Meshtastic publishes) is read like sniffowireless reads
+  it: node names, hardware, roles, positions, telemetry and text messages. Private channels and direct messages stay
+  unreadable. Turn **Read the public Meshtastic channel** off to see only the headers.
+* **Sensor mode:** turn on **LoRa board** on the Sensor page. The phone sends the raw frames (`lora_frame`) and the
+  board's state; the server recognises and stores them as it does for its own boards, and the profiles set for this
+  sensor under **Settings → LoRa** replace the phone's own list. A firmware update from the server isn't supported on the
+  phone: flash from the web interface instead.
+* **Same USB chip as some Zigbee sticks:** the Heltec V3 uses a CP2102, like the ZBDongle-P. The app asks each such
+  device whether it is a lora-sniffer (it answers `PING`) and then leaves it out of the Zigbee page.
+
+The profile parser, the classifier and the Meshtastic decoder are ports of sniffowireless's `lora_protocols.py` and
+`meshtastic.py`, tested against what sniffowireless's Python produces for 550 frames and 326 packets.
 
 ### 802.15.4 sniffer
 
@@ -259,6 +288,11 @@ sequences computed from the [zigpy-znp](https://github.com/zigpy/zigpy-znp) and
 emulator against simulated dongles. USB access, permissions and real firmware behaviour are still unproven, and
 whether a given stick's firmware includes `mfglib` is only known once you try it.
 
+**LoRa has not been run on a real board yet.** The parsing matches sniffowireless's own Python on its fixtures, the
+serial driver is tested against a fake board that answers like the firmware's `main.cpp`, frames sent through it reached
+a sniffowireless server running from source and were recognised there (Meshtastic, MeshCore, LoRaWAN, LoRa APRS), and
+the LoRa page runs on the emulator against a simulated board in debug builds (`--ez simulate_lora true`).
+
 ## Project layout
 
 ```
@@ -268,13 +302,15 @@ app/src/main/java/io/github/banaanga/sniffowireless/mobile/
 ├── zigbee/     USB scanner, dongle detection, Z-Stack and EZSP drivers
 ├── wifimon/    Wi-Fi monitor mode through an MT7921U
 ├── btusb/      Bluetooth through a USB adapter
+├── lora/       LoRa through a board with the lora-sniffer firmware
 ├── sensor/     sensor mode: the shared Hub, SensorService (foreground service), settings
 ├── classify/   DeviceClassifier (type-guessing rules)
 ├── data/       models, OuiDatabase (MAC vendors), DeviceIndex (saved devices)
 └── ui/         one screen per page + shared sniffowireless-style components (Common.kt)
 mt7921u/        MT7921U driver (plain Kotlin), mt7921u-pc/ its PC prototype
 bthci/          Bluetooth HCI over USB + Realtek firmware loader (plain Kotlin), bthci-pc/ its PC prototype
-sniffo-core/    sniffowireless's observation formats ported to Kotlin, and the upload to its server (plain Kotlin)
+sniffo-core/    sniffowireless's observation formats, LoRa classifier and Meshtastic decoder ported to Kotlin, the
+                lora-sniffer driver, and the upload to its server (plain Kotlin)
 tools/sniffowireless/  generates sniffo-core's test fixtures from a sniffowireless checkout
 ```
 

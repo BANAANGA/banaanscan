@@ -54,6 +54,27 @@ class LiveServerTest {
             batch.add(Captured((it["channel"] as Number).toInt(), hex(it["data"] as String), (it["rssi"] as Number?)?.toInt(), (it["lqi"] as Number?)?.toInt()))
         }
         batch.drain(now)?.let { f.put(it); n++ }
+        // LoRa frames as the lora-sniffer reports them, through the driver: the recognised ones from the fixtures.
+        status.register("lora:usb1", "type" to "lora", "iface" to "usb", "profiles" to listOf("meshtastic-eu868", "meshcore-eu868", "lorawan-eu868"),
+            "lora_rev" to 0, "hw_usb" to "10c4:ea60")
+        @Suppress("UNCHECKED_CAST")
+        val loraLines = (fixture("lora.json")["classify"] as List<Map<String, Any?>>)
+            .filter { (it["result"] as Map<String, Any?>)["protocol"] != "unknown" && (it["hex"] as String).isNotEmpty() }.take(40)
+            .map { c ->
+                val sync = (c["sync"] as Number).toInt()
+                val (freq, bw, sf) = when (sync) { 0x2B -> Triple("869.5250", "250.0", 11); 0x34 -> Triple("868.1000", "125.0", 7); else -> Triple("869.6180", "62.5", 8) }
+                "RX,1,$freq,$bw,$sf,0x%02X,-97.5,6.25,-1200,${(c["hex"] as String).length / 2},${c["hex"]}".format(sync)
+            }
+        val board = object : LineLink {
+            val out = java.util.ArrayDeque<String>()
+            var sniffer: LoraSniffer? = null
+            var configured = false
+            override fun writeLine(text: String) { if (text == "PING") out += "PONG" else if (text.startsWith("CFG")) { configured = true; out += "OK,CFG"; out.addAll(loraLines) } }
+            override fun readLine(timeoutMs: Long): String? = out.pollFirst() ?: run { if (configured) sniffer?.stopped = true; null }
+        }
+        val sniffer = LoraSniffer(board, { LoraProfiles.parse("meshtastic-eu868") to 5.0 }, onFrame = { o, _, _ -> f.put(o); n++ })
+        board.sniffer = sniffer
+        sniffer.run()
         f.put(mapOf("t" to "chan", "ts" to now, "mac" to "-", "freq" to 5180, "dwell_ms" to 400, "frames" to 25, "bytes" to 4000,
             "airtime_us" to 1800, "retries" to 2, "noise_sum" to 0, "noise_cnt" to 0)); n++
 

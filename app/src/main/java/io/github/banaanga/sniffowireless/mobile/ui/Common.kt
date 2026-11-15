@@ -92,7 +92,7 @@ fun ThemeMode.isDark(): Boolean = when (this) {
 data class Palette(
     val bg: Color, val panel: Color, val panel2: Color, val border: Color, val border2: Color,
     val text: Color, val muted: Color, val faint: Color,
-    val ap: Color, val wifiClient: Color, val ble: Color, val btClassic: Color, val lan: Color, val zigbee: Color,
+    val ap: Color, val wifiClient: Color, val ble: Color, val btClassic: Color, val lan: Color, val zigbee: Color, val lora: Color,
     val good: Color, val warn: Color, val bad: Color,
 )
 
@@ -100,7 +100,7 @@ val DarkPalette = Palette(
     bg = Color(0xFF0B0C0E), panel = Color(0xFF111316), panel2 = Color(0xFF16181C), border = Color(0xFF1F2227), border2 = Color(0xFF2A2E35),
     text = Color(0xFFE6E7E9), muted = Color(0xFF8A8F98), faint = Color(0xFF5B6068),
     ap = Color(0xFF4CC2FF), wifiClient = Color(0xFF3ECF8E), ble = Color(0xFFF5B84A), btClassic = Color(0xFFEF6F6C),
-    lan = Color(0xFFA8B3C2), zigbee = Color(0xFFFF9F6B),
+    lan = Color(0xFFA8B3C2), zigbee = Color(0xFFFF9F6B), lora = Color(0xFFC792EA),
     good = Color(0xFF3ECF8E), warn = Color(0xFFF5B84A), bad = Color(0xFFEF6F6C),
 )
 
@@ -108,7 +108,7 @@ val LightPalette = Palette(
     bg = Color(0xFFF6F7F9), panel = Color(0xFFFFFFFF), panel2 = Color(0xFFEFF1F4), border = Color(0xFFE2E4E8), border2 = Color(0xFFD0D3D9),
     text = Color(0xFF16181C), muted = Color(0xFF5B6068), faint = Color(0xFF8A8F98),
     ap = Color(0xFF0A7BC2), wifiClient = Color(0xFF1C9A63), ble = Color(0xFFB7791F), btClassic = Color(0xFFC94B48),
-    lan = Color(0xFF66707E), zigbee = Color(0xFFD9692F),
+    lan = Color(0xFF66707E), zigbee = Color(0xFFD9692F), lora = Color(0xFF8A4FBF),
     good = Color(0xFF1C9A63), warn = Color(0xFFB7791F), bad = Color(0xFFC94B48),
 )
 

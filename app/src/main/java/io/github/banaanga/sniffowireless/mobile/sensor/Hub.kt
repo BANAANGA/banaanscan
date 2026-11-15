@@ -13,6 +13,8 @@ import io.github.banaanga.sniffowireless.mobile.BuildConfig
 import io.github.banaanga.sniffowireless.mobile.btusb.UsbBluetoothScanner
 import io.github.banaanga.sniffowireless.mobile.core.Forwarder
 import io.github.banaanga.sniffowireless.mobile.core.LogBuffer
+import io.github.banaanga.sniffowireless.mobile.core.LoraControl
+import io.github.banaanga.sniffowireless.mobile.lora.LoraScanner
 import io.github.banaanga.sniffowireless.mobile.core.Sink
 import io.github.banaanga.sniffowireless.mobile.core.StatusBoard
 import io.github.banaanga.sniffowireless.mobile.core.Target
@@ -72,6 +74,25 @@ class SensorSettings(context: Context) {
             return if (v == null || (v == "default" && !p.getBoolean("wifi_channels_chosen", false))) DEFAULT_WIFI_CHANNELS else v
         }
         set(v) = p.edit().putString("wifi_channels", v.trim()).putBoolean("wifi_channels_chosen", true).apply()
+    /** LoRa through a board with sniffowireless's lora-sniffer firmware. */
+    var lora: Boolean
+        get() = p.getBoolean("lora", true)
+        set(v) = p.edit().putBoolean("lora", v).apply()
+    /** The LoRa profiles when the server sets none: a sniffowireless LORA_PROFILES list; empty means the region's defaults. */
+    var loraProfiles: String
+        get() = p.getString("lora_profiles", "") ?: ""
+        set(v) = p.edit().putString("lora_profiles", v.trim()).apply()
+    var loraRegion: String
+        get() = p.getString("lora_region", "EU868") ?: "EU868"
+        set(v) = p.edit().putString("lora_region", v).apply()
+    /** Seconds on each LoRa profile. */
+    var loraHop: Double
+        get() = p.getFloat("lora_hop", 5f).toDouble()
+        set(v) = p.edit().putFloat("lora_hop", v.toFloat()).apply()
+    /** Read the public Meshtastic channel (the default key everyone has) on the LoRa page, as sniffowireless does by default. */
+    var meshtasticPublic: Boolean
+        get() = p.getBoolean("meshtastic_public", true)
+        set(v) = p.edit().putBoolean("meshtastic_public", v).apply()
     /** Was sensor mode on when the app last ran (restarted after a reboot or a crash). */
     var enabled: Boolean
         get() = p.getBoolean("enabled", false)
@@ -105,6 +126,9 @@ class Hub(private val app: Application) {
     val logs = LogBuffer()
     val wifiControl = WifiControl(UsbWifiMonitor.IFACE) { level, msg -> log(level, "sniffowireless.channels", msg) }
     val zigbeeControl = ZigbeeControl { level, msg -> log(level, "sniffowireless.zigbee", msg) }
+    val loraControl = LoraControl { level, msg -> log(level, "sniffowireless.lora", msg) }
+    /** USB device names of boards that answered as lora-sniffers: the Zigbee scanner leaves them alone. */
+    val loraSniffers: MutableSet<String> = java.util.Collections.synchronizedSet(HashSet())
     val forwarder = Forwarder(null, status, logs, version(), system = ::system)
 
     /** True while sensor mode runs: observations go to the forwarder only then. */
@@ -119,11 +143,13 @@ class Hub(private val app: Application) {
     val zigbee = ZigbeeScanner(app, this)
     val wifiMonitor = UsbWifiMonitor(app, this)
     val btUsb = UsbBluetoothScanner(app, this)
+    val lora = LoraScanner(app, this)
     val index = DeviceIndex(app)
 
     init {
         forwarder.onChannelConfig = wifiControl::applyRemote
         forwarder.onZigbeeConfig = zigbeeControl::applyRemote
+        forwarder.onLoraConfig = loraControl::applyRemote
     }
 
     fun setSending(on: Boolean) {

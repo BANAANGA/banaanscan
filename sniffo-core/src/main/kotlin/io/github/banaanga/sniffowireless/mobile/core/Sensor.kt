@@ -213,6 +213,7 @@ class Forwarder(
     private var backoff = 2
     var onChannelConfig: ((Any?) -> Unit)? = null
     var onZigbeeConfig: ((Any?) -> Unit)? = null
+    var onLoraConfig: ((Any?) -> Unit)? = null
 
     val pending: Int @Synchronized get() = buf.size
 
@@ -260,6 +261,7 @@ class Forwarder(
         lastReply = parsed
         parsed["channel_config"]?.let { onChannelConfig?.invoke(it) }
         parsed["zigbee_config"]?.let { onZigbeeConfig?.invoke(it) }
+        parsed["lora_config"]?.let { onLoraConfig?.invoke(it) }
         (parsed["commands"] as? List<*>)?.takeIf { it.isNotEmpty() }?.let {
             logs.add("INFO", "sniffowireless.sensors", "The server asked for an adapter reset; replug the adapter on the phone instead")
         }

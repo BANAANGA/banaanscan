@@ -74,9 +74,20 @@ class SensorService : Service() {
         if (s.usbBt && hub.btUsb.adapter.value != null && !hub.btUsb.running.value) {
             jobs += scope.launch { hub.btUsb.run(passive = s.btPassive) }
         }
-        if (s.zigbee && !hub.zigbee.running.value) {
-            hub.zigbee.dongles.value.firstOrNull { it.device != null && it.blocker == null }?.let { dongle ->
-                jobs += scope.launch { hub.zigbee.runForSensor(dongle) }
+        // LoRa boards and Zigbee sticks can have the same USB serial chip: find the lora-sniffers first (they answer PING),
+        // then give Zigbee a stick that isn't one.
+        if (s.lora || s.zigbee) jobs += scope.launch {
+            if (s.lora && !hub.lora.running.value) {
+                hub.lora.boards.value.forEach { hub.lora.probe(it) }
+                hub.lora.boards.value.firstOrNull { it.device.deviceName in hub.loraSniffers }?.let { board ->
+                    launch { hub.lora.run(board, forSensor = true) }
+                }
+            }
+            if (s.zigbee && !hub.zigbee.running.value) {
+                hub.zigbee.refresh()
+                hub.zigbee.dongles.value.firstOrNull { it.device != null && it.blocker == null }?.let { dongle ->
+                    launch { hub.zigbee.runForSensor(dongle) }
+                }
             }
         }
     }

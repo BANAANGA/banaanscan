@@ -119,4 +119,50 @@ class FixtureTest {
         for ((freq, label) in f["labels"] as Map<String, Any?>) check("label $freq", label, Channels.label(freq.toInt()), failures)
         done(failures)
     }
+
+    private fun profileMap(p: LoraProfile) = mapOf("name" to p.name, "label" to p.label, "freq" to p.freq, "bw" to p.bw, "sf" to p.sf, "cr" to p.cr,
+        "sync" to p.sync, "preamble" to p.preamble, "hint" to p.hint, "describe" to p.describe())
+
+    @Test fun `LoRa profiles, frames and the public Meshtastic channel`() {
+        val failures = ArrayList<String>()
+        val f = fixture("lora.json")
+        @Suppress("UNCHECKED_CAST")
+        for (c in f["profiles"] as List<Map<String, Any?>>) {
+            val name = "profiles '${c["spec"]}' (${c["region"]})"
+            val got = runCatching { if (c["region"] != null) LoraProfiles.parse(c["spec"] as String, c["region"] as String) else LoraProfiles.parse(c["spec"] as String) }
+            if (c["error"] == true) {
+                if (got.isSuccess) failures += "$name: expected an error, got ${got.getOrNull()}"
+            } else {
+                got.exceptionOrNull()?.let { failures += "$name: ${it.message}" } ?: check(name, c["profiles"], got.getOrThrow().map(::profileMap), failures)
+            }
+        }
+        @Suppress("UNCHECKED_CAST")
+        for ((key, freq) in f["meshtastic_freqs"] as Map<String, Any?>) {
+            val (region, preset) = key.split("/")
+            check("frequency $key", freq, LoraProfiles.meshtasticFrequency(region, preset), failures)
+        }
+        @Suppress("UNCHECKED_CAST")
+        for (c in f["rx"] as List<Map<String, Any?>>) {
+            val rx = LoraRx.parse(c["line"] as String)?.let {
+                mapOf("freq" to it.freq, "bw" to it.bw, "sf" to it.sf, "sync" to it.sync, "rssi" to it.rssi, "snr" to it.snr, "ferr" to it.ferr, "hex" to it.hex)
+            }
+            check("rx '${c["line"]}'", c["rx"], rx, failures)
+        }
+        @Suppress("UNCHECKED_CAST")
+        for ((i, c) in (f["classify"] as List<Map<String, Any?>>).withIndex()) {
+            check("classify[$i] ${c["hex"]}", c["result"],
+                LoraClassifier.classify(hex(c["hex"] as String), (c["sync"] as Number?)?.toInt(), c["hint"] as String?), failures)
+        }
+        @Suppress("UNCHECKED_CAST")
+        for ((i, c) in (f["decode"] as List<Map<String, Any?>>).withIndex()) {
+            check("decode[$i] ${c["hex"]}", c["result"], Meshtastic.decode(hex(c["hex"] as String)), failures)
+        }
+        @Suppress("UNCHECKED_CAST")
+        for (c in f["airtime"] as List<Map<String, Any?>>) {
+            val ms = LoraProfiles.airtimeMs((c["len"] as Number).toInt(), (c["sf"] as Number).toInt(), (c["bw"] as Number).toDouble(),
+                (c["cr"] as Number).toInt(), (c["preamble"] as Number).toInt())
+            if (kotlin.math.abs(ms - (c["ms"] as Number).toDouble()) > 1e-9) failures += "airtime $c: got $ms"
+        }
+        done(failures)
+    }
 }

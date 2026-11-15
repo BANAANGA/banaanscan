@@ -77,6 +77,8 @@ fun SensorScreen(vm: MainViewModel) {
     var usbWifiOn by remember { mutableStateOf(s.usbWifi) }
     var usbBtOn by remember { mutableStateOf(s.usbBt) }
     var zigbeeOn by remember { mutableStateOf(s.zigbee) }
+    var loraOn by remember { mutableStateOf(s.lora) }
+    val loraBoards by hub.lora.boards.collectAsStateWithLifecycle()
     var btPassive by remember { mutableStateOf(s.btPassive) }
 
     LaunchedEffect(Unit) {
@@ -182,7 +184,10 @@ fun SensorScreen(vm: MainViewModel) {
             if (usbBtOn) SourceRow("Listen only", "No scan requests or classic inquiry: transmits nothing, but finds fewer names.", btPassive, !running, indent = true) {
                 btPassive = it; s.btPassive = it
             }
-            val stick = dongles.firstOrNull { it.device != null }
+            val board = loraBoards.firstOrNull()
+            SourceRow("LoRa board (lora-sniffer)", board?.let { "Connected: ${it.name}. Frames go to the server, which recognises them; profiles as set on the LoRa page or by the server's Settings → LoRa." }
+                ?: "Not connected. A Heltec WiFi LoRa 32 V3 with sniffowireless's lora-sniffer firmware.", loraOn, !running) { loraOn = it; s.lora = it }
+            val stick = dongles.firstOrNull { it.device != null && it.blocker == null }
             SourceRow("Zigbee stick", stick?.let { "Connected: ${it.name}. Scans every 10 minutes and listens in between, as the server's Settings → Zigbee says." } ?: "Not connected.",
                 zigbeeOn, !running) { zigbeeOn = it; s.zigbee = it }
             Muted("Plug adapters in before pressing Start. The server's Sensors page shows each one with its state.", Modifier.padding(top = 4.dp))

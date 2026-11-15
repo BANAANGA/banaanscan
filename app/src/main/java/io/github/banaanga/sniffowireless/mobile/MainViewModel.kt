@@ -20,6 +20,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     val wifi = hub.wifi
     val bt = hub.bt
     val lan = hub.lan
+    val lora = hub.lora
     val zigbee = hub.zigbee
     val wifiMonitor = hub.wifiMonitor
     val btUsb = hub.btUsb
@@ -123,6 +124,11 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     /** Debug builds only: lists a simulated dongle, because emulators have no USB host. */
+    /** Debug builds only: a simulated LoRa board, because emulators have no USB host. */
+    fun addSimulatedLoraBoard() {
+        lora.simulator = io.github.banaanga.sniffowireless.mobile.lora.LoraDebug.simulatedBoard()
+    }
+
     fun addSimulatedZigbeeDongle(kind: String) {
         if (simulatedKind != null || ZigbeeDebug.simulatedLink(kind) == null) return
         simulatedKind = kind

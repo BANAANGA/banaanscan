@@ -72,6 +72,7 @@ import io.github.banaanga.sniffowireless.mobile.ui.WifiScreen
 import io.github.banaanga.sniffowireless.mobile.ui.SensorScreen
 import io.github.banaanga.sniffowireless.mobile.ui.Sniffo
 import io.github.banaanga.sniffowireless.mobile.ui.ZigbeeScreen
+import io.github.banaanga.sniffowireless.mobile.ui.LoraScreen
 
 class MainActivity : ComponentActivity() {
     /** Set when opened from the sensor notification: show the Sensor screen. */
@@ -88,6 +89,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val vm: MainViewModel = viewModel()
             intent.getStringExtra("simulate_zigbee")?.let(vm::addSimulatedZigbeeDongle)
+            if (intent.getBooleanExtra("simulate_lora", false)) vm.addSimulatedLoraBoard()
             val mode by vm.themeMode.collectAsStateWithLifecycle()
             val dark = mode.isDark()
             // Keep status/navigation bar icons readable for the chosen theme, not the system one.
@@ -128,6 +130,7 @@ private enum class Tab(val label: String, val title: String, val sub: String) {
     WIFI("Wi-Fi", "Wi-Fi", "Access points around you, and with a USB adapter the devices talking to them"),
     BLUETOOTH("Bluetooth", "Bluetooth", "BLE and classic devices nearby"),
     ZIGBEE("Zigbee", "Zigbee & 802.15.4", "Networks and radios, through a USB stick"),
+    LORA("LoRa", "LoRa", "Meshtastic, MeshCore, LoRaWAN and LoRa APRS, through a Heltec V3 board"),
     NETWORK("LAN", "LAN", "Hosts on the network this phone is connected to"),
     INDEX("Devices", "Devices", "Everything seen so far, remembered on this phone"),
     SENSOR("Sensor", "Sensor", "Send what this phone hears to a sniffowireless server"),
@@ -203,6 +206,7 @@ private fun SniffoApp(vm: MainViewModel, themeMode: ThemeMode, openSensor: andro
                 Tab.WIFI -> WifiScreen(vm)
                 Tab.BLUETOOTH -> BluetoothScreen(vm)
                 Tab.ZIGBEE -> ZigbeeScreen(vm)
+                Tab.LORA -> LoraScreen(vm)
                 Tab.NETWORK -> NetworkScreen(vm)
                 Tab.INDEX -> IndexScreen(vm)
                 Tab.SENSOR -> SensorScreen(vm)
