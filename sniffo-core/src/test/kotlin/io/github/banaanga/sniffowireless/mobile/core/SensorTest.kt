@@ -111,4 +111,10 @@ class SensorTest {
         assertEquals(mapOf("a" to listOf(1L, 2.5, "x\"y\n", true, null), "b" to mapOf("c" to -3L)), Json.parse(Json.encode(v)))
         assertEquals("1700000000.0", Json.encode(1.7e9))
     }
+
+    @Test fun `the app's default list adds the 6 GHz preferred channels`() {
+        val f = Channels.parse("default,6ghz")
+        assertEquals(Channels.PRESETS["default"]!! + Channels.PRESETS["6ghz"]!!, f)
+        assertTrue(5975 in f)
+    }
 }

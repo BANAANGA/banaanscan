@@ -68,7 +68,7 @@ class SensorService : Service() {
         if (s.phoneWifi) jobs += scope.launch(Dispatchers.Main) { hub.wifi.runForSensor() }
         if (s.phoneBt) jobs += scope.launch(Dispatchers.Main) { hub.bt.runForSensor() }
         if (s.usbWifi && hub.wifiMonitor.adapter.value != null && !hub.wifiMonitor.running.value) {
-            val own = runCatching { Channels.check(s.wifiChannels) }.getOrElse { Channels.parse("default") }
+            val own = runCatching { Channels.check(s.wifiChannels) }.getOrElse { Channels.parse(SensorSettings.DEFAULT_WIFI_CHANNELS) }
             jobs += scope.launch { hub.wifiMonitor.run(own) }
         }
         if (s.usbBt && hub.btUsb.adapter.value != null && !hub.btUsb.running.value) {

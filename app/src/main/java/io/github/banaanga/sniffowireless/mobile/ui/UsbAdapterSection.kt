@@ -52,7 +52,7 @@ fun UsbAdapterSection(vm: MainViewModel) {
     val clients by mon.clients.collectAsStateWithLifecycle()
     val channels by mon.channels.collectAsStateWithLifecycle()
     val frames by mon.frames.collectAsStateWithLifecycle()
-    var plan by rememberSaveable { mutableStateOf(ChannelPlan.BAND_24) }
+    var plan by rememberSaveable { mutableStateOf(ChannelPlan.ALL) }
 
     LaunchedEffect(Unit) { mon.refresh() }
 

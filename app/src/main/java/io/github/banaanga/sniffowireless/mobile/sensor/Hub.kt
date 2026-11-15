@@ -61,10 +61,17 @@ class SensorSettings(context: Context) {
     var btPassive: Boolean
         get() = p.getBoolean("bt_passive", false)
         set(v) = p.edit().putBoolean("bt_passive", v).apply()
-    /** The MT7921U's channels when the server sets none: a sniffowireless channel list ("default", "all", "1,6,11"). */
+    /**
+     * The MT7921U's channels when the server sets none: a sniffowireless channel list ("default", "all", "1,6,11").
+     * Starts as [DEFAULT_WIFI_CHANNELS], which adds the 6 GHz preferred channels to sniffowireless's "default". Up to
+     * 1.0.0 the app saved plain "default" on every start, so that value counts as never chosen and moves to the new one.
+     */
     var wifiChannels: String
-        get() = p.getString("wifi_channels", "default") ?: "default"
-        set(v) = p.edit().putString("wifi_channels", v.trim()).apply()
+        get() {
+            val v = p.getString("wifi_channels", null)
+            return if (v == null || (v == "default" && !p.getBoolean("wifi_channels_chosen", false))) DEFAULT_WIFI_CHANNELS else v
+        }
+        set(v) = p.edit().putString("wifi_channels", v.trim()).putBoolean("wifi_channels_chosen", true).apply()
     /** Was sensor mode on when the app last ran (restarted after a reboot or a crash). */
     var enabled: Boolean
         get() = p.getBoolean("enabled", false)
@@ -73,6 +80,7 @@ class SensorSettings(context: Context) {
     val target: Target? get() = if (serverUrl.isNotBlank() && token.isNotBlank()) Target(serverUrl, token) else null
 
     companion object {
+        const val DEFAULT_WIFI_CHANNELS = "default,6ghz"
         /**
          * The server address and token from what sniffowireless's Settings → Sensors → Add remote sensor shows: its docker
          * command (with -e SERVER_URL=… -e SENSOR_TOKEN=…), a URL, a token, or both on separate lines.
