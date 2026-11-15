@@ -17,4 +17,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "BanaanScan"
-include(":app", ":mt7921u", ":mt7921u-pc")
+include(":app", ":mt7921u", ":mt7921u-pc", ":bthci", ":bthci-pc")

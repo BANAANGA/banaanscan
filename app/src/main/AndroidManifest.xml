@@ -29,7 +29,7 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="BanaanScan"
+        android:label="${appLabel}"
         android:supportsRtl="true"
         android:theme="@style/Theme.BanaanScan"
         android:usesCleartextTraffic="true">

@@ -29,6 +29,7 @@ android {
         targetSdk = 35
         versionCode = releaseVersion?.let(::versionCodeOf) ?: 2
         versionName = releaseVersion ?: "0.2.0"
+        manifestPlaceholders["appLabel"] = "BanaanScan"
     }
 
     signingConfigs {
@@ -43,6 +44,12 @@ android {
     }
 
     buildTypes {
+        // Debug builds install next to the release (e.g. from Obtainium), which has another signing key.
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            manifestPlaceholders["appLabel"] = "BanaanScan debug"
+        }
         release {
             isMinifyEnabled = false
             if (keystoreFile != null) signingConfig = signingConfigs.getByName("release")
@@ -80,6 +87,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("com.github.mik3y:usb-serial-for-android:3.11.0")
     implementation(project(":mt7921u"))
+    implementation(project(":bthci"))
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")

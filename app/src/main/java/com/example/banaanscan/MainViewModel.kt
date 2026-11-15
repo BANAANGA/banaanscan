@@ -3,6 +3,7 @@ package com.example.banaanscan
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.banaanscan.btusb.UsbBluetoothScanner
 import com.example.banaanscan.data.DeviceIndex
 import com.example.banaanscan.data.OuiDatabase
 import com.example.banaanscan.scan.BluetoothScanner
@@ -25,6 +26,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     val lan = LanScanner(app)
     val zigbee = ZigbeeScanner(app)
     val wifiMonitor = UsbWifiMonitor(app)
+    val btUsb = UsbBluetoothScanner(app)
     val index = DeviceIndex(app)
 
     private val prefs = app.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
@@ -37,6 +39,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     private var lanJob: Job? = null
     private var zigbeeJob: Job? = null
     private var wifiMonitorJob: Job? = null
+    private var btUsbJob: Job? = null
     private var simulatedKind: String? = null
 
     init {
@@ -47,6 +50,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         }
         viewModelScope.launch { wifi.results.collect { index.recordWifi(it) } }
         viewModelScope.launch { bt.devices.sample(2000).collect { index.recordBt(it.values) } }
+        viewModelScope.launch { btUsb.devices.sample(2000).collect { index.recordBt(it.values) } }
         viewModelScope.launch { lan.devices.collect { index.recordLan(it, lan.network.value?.ssid) } }
         viewModelScope.launch { zigbee.networks.collect { index.recordZigbee(it) } }
         viewModelScope.launch { zigbee.sniffedDevices.sample(2000).collect { index.recordSniffed(it) } }
@@ -109,6 +113,15 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         wifiMonitorJob?.cancel()
     }
 
+    fun startBtUsb(passive: Boolean) {
+        if (btUsbJob?.isActive == true) return
+        btUsbJob = viewModelScope.launch { btUsb.run(passive) }
+    }
+
+    fun stopBtUsb() {
+        btUsbJob?.cancel()
+    }
+
     fun stopZigbee() {
         zigbeeJob?.cancel()
     }
@@ -123,6 +136,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     override fun onCleared() {
         zigbee.close()
         wifiMonitor.close()
+        btUsb.close()
         bt.stop()
         wifi.stop()
     }

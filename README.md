@@ -32,7 +32,7 @@ Zigbee and sniffer results are made up by the simulated dongle in debug builds.<
 | Tab | What it does |
 |---|---|
 | **Wi-Fi** | Lists access points: SSID, BSSID + vendor, signal, band/channel/width, Wi-Fi standard, security, channel usage. Flags hotspots / Wi-Fi Direct printers & TVs. |
-| **Bluetooth** | BLE scan + classic discovery merged per address. Decodes BLE manufacturer data (Apple Continuity, Microsoft, Samsung, Garmin…), service UUIDs and the Bluetooth device class. |
+| **Bluetooth** | BLE scan + classic discovery merged per address. Decodes BLE manufacturer data (Apple Continuity, Microsoft, Samsung, Garmin…), service UUIDs and the Bluetooth device class. With a USB Bluetooth adapter: every advertising packet, long range (Coded PHY), and a listen-only mode. |
 | **Zigbee** | Active scan through a USB coordinator: PAN ID, extended PAN ID, channel, signal, whether the network is open for joining, and which routers answered. Silicon Labs sticks also measure interference per channel, and can passively sniff all 802.15.4 traffic: frames per channel, addresses, frame types and a protocol hint. |
 | **Network** | Subnet sweep (TCP connect + ICMP), then per host: 33 common ports, reverse DNS, NetBIOS name/MAC, mDNS/DNS-SD services + TXT (Apple model IDs, Cast models, printers), SSDP/UPnP description, web page title/Server header. |
 | **Index** | Persistent JSON index of every LAN/BT/Wi-Fi device with first/last seen and sighting count. Search, filter, export CSV. |
@@ -40,6 +40,24 @@ Zigbee and sniffer results are made up by the simulated dongle in debug builds.<
 
 The app starts in dark mode. The button in the top bar cycles Dark → Light → Follow system, and the
 choice is remembered.
+
+### USB adapters
+
+BanaanScan can drive two kinds of USB adapter itself, without root, through a USB-C cable or OTG adapter. Choose
+**USB adapter** at the top of the Wi-Fi or Bluetooth tab.
+
+* **Wi-Fi monitor mode** with a MediaTek MT7921U (`0e8d:7961`, e.g. Alfa AWUS036AXML): listens on 2.4, 5 and 6 GHz
+  and lists networks and the devices talking in them, including probe requests. Nothing is transmitted. A capture
+  for Wireshark is saved too. See [tools/mt7921u](tools/mt7921u/README.md).
+* **Bluetooth** with a USB Bluetooth adapter, tested with the TP-Link UB500 Plus (Realtek RTL8761BU, `2357:0604`).
+  Compared with the phone's own Bluetooth it reports every advertising packet without Android's filtering, hears
+  long-range (Coded PHY) devices, knows whether an address is public or random, and has a **Listen only** mode that
+  transmits nothing. Without it, it asks devices for their names from a random address and also searches for
+  classic devices. It doesn't follow other devices' connections: that needs sniffer hardware such as an nRF52840.
+  See [tools/bthci](tools/bthci/README.md).
+
+The adapters' firmware is bundled with the app under the chip makers' licences: MediaTek's (`assets/mt7921u/`) and
+Realtek's (`assets/rtl_bt/`), both from linux-firmware.
 
 ### Device-type guessing
 
@@ -110,6 +128,7 @@ private storage. **Lookup → Update now** refreshes it. To work fully offline, 
   Nothing is sent anywhere except the vendor-database download.
 * For Zigbee: a supported USB stick, plus a phone with USB-OTG host support. Android asks for permission
   the first time you scan with a stick.
+* For the USB adapter modes: an MT7921U Wi-Fi adapter or a USB Bluetooth adapter, and USB-OTG host support.
 
 ## Install with Obtainium
 
@@ -151,7 +170,7 @@ You need JDK 17 and the Android SDK (platform 35). The Gradle wrapper is include
 Emulators have no USB host, so debug builds can list a simulated Zigbee dongle (`ezsp` or `znp`):
 
 ```bash
-adb shell am start -n io.github.banaanga.banaanscan/com.example.banaanscan.MainActivity --es simulate_zigbee ezsp
+adb shell am start -n io.github.banaanga.banaanscan.debug/com.example.banaanscan.MainActivity --es simulate_zigbee ezsp
 ```
 
 **Android Studio:** open the project folder and press Run.
@@ -172,8 +191,8 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ## Testing status
 
 Tested on the Android 15 emulator (Pixel 6 profile): all tabs, LAN scan, MAC lookup, index persistence,
-rotation and the theme toggle. **Not yet tested on a physical phone**, so real-world Wi-Fi, Bluetooth and
-home-network results are unverified.
+rotation and the theme toggle. On a Galaxy S10 (Android 12): the app itself, Wi-Fi monitor mode through an MT7921U
+and Bluetooth through a TP-Link UB500 Plus (see the [USB adapters](#usb-adapters) section).
 
 **Zigbee has not been run on a real dongle.** Its protocol code is checked by unit tests against byte
 sequences computed from the [zigpy-znp](https://github.com/zigpy/zigpy-znp) and
@@ -188,9 +207,13 @@ app/src/main/java/com/example/banaanscan/
 ├── MainActivity.kt / MainViewModel.kt   app shell, permissions, theme, state
 ├── scan/       WifiScanner, BluetoothScanner, LanScanner, MdnsScanner, SsdpScanner, NetBios, Probes
 ├── zigbee/     USB scanner, dongle detection, Z-Stack and EZSP drivers
+├── wifimon/    Wi-Fi monitor mode through an MT7921U
+├── btusb/      Bluetooth through a USB adapter
 ├── classify/   DeviceClassifier (type-guessing rules)
 ├── data/       models, OuiDatabase (MAC vendors), DeviceIndex (saved devices)
 └── ui/         one screen per tab + shared components
+mt7921u/        MT7921U driver (plain Kotlin), mt7921u-pc/ its PC prototype
+bthci/          Bluetooth HCI over USB + Realtek firmware loader (plain Kotlin), bthci-pc/ its PC prototype
 ```
 
 Only scan networks you own or have permission to scan.

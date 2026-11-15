@@ -1,0 +1,7 @@
+The HCI code in this folder is written for BanaanScan from the Bluetooth Core specification. The Realtek firmware
+loader follows the firmware file layout as used by linux-firmware's rtl_bt/ files; no Linux driver code is copied.
+
+The Realtek firmware (rtl8761bu_fw.bin, rtl8761bu_config.bin) is not part of this code. It comes from the
+linux-firmware collection and is bundled with the app in app/src/main/assets/rtl_bt/ under Realtek's licence
+(LICENCE.rtlwifi_firmware.txt, next to it): redistributable in binary form without modification, with its copyright
+notice and disclaimer reproduced. It must not be reverse engineered.

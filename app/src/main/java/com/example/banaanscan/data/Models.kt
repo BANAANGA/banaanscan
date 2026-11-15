@@ -63,9 +63,15 @@ data class BtDevice(
     val randomAddress: Boolean = false,
     val guess: Guess = Guess.UNKNOWN,
     val lastSeen: Long = System.currentTimeMillis(),
+    /** USB adapter scans only: the radio modes it was heard on ("1M", "2M", "Coded") and how many packets. */
+    val phys: Set<String> = emptySet(),
+    val packets: Int = 0,
 ) {
-    /** OUI lookups only mean something for public addresses, which LE-only devices rarely use. */
-    val vendorReliable: Boolean get() = !randomAddress && (classic || bonded)
+    /**
+     * OUI lookups only mean something for public addresses, which LE-only devices rarely use. A USB adapter reports
+     * the address type ([phys] set), so there a public address is known to be one.
+     */
+    val vendorReliable: Boolean get() = !randomAddress && (classic || bonded || phys.isNotEmpty())
 }
 
 data class SsdpInfo(
