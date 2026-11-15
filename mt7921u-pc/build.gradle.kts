@@ -19,5 +19,5 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.example.banaanscan.mt7921u.pc.MainKt")
+    mainClass.set("io.github.banaanga.sniffowireless.mobile.mt7921u.pc.MainKt")
 }

@@ -1,7 +1,7 @@
-// Release builds take their version from the git tag (vX.Y.Z, passed as BANAANSCAN_VERSION) and are signed with the
+// Release builds take their version from the git tag (vX.Y.Z, passed as SNIFFO_VERSION) and are signed with the
 // release key from environment variables, which the release workflow fills from GitHub secrets. Without them, a
 // release build is simply unsigned.
-val releaseVersion: String? = System.getenv("BANAANSCAN_VERSION")?.removePrefix("v")
+val releaseVersion: String? = System.getenv("SNIFFO_VERSION")?.removePrefix("v")
 val keystoreFile: String? = System.getenv("RELEASE_KEYSTORE_FILE")
 
 /** 1.2.3 -> 10203, so every new tag counts as an update. */
@@ -18,18 +18,18 @@ plugins {
 }
 
 android {
-    namespace = "com.example.banaanscan"
+    namespace = "io.github.banaanga.sniffowireless.mobile"
     compileSdk = 35
 
     defaultConfig {
         // The app's permanent identity on Android: changing it after a release makes installs a different app.
-        // The Kotlin package (namespace) is internal and stays com.example.banaanscan.
-        applicationId = "io.github.banaanga.banaanscan"
+        // The Kotlin package (namespace) is internal and stays io.github.banaanga.sniffowireless.mobile.
+        applicationId = "io.github.banaanga.sniffowireless.mobile"
         minSdk = 26
         targetSdk = 35
         versionCode = releaseVersion?.let(::versionCodeOf) ?: 2
         versionName = releaseVersion ?: "0.2.0"
-        manifestPlaceholders["appLabel"] = "BanaanScan"
+        manifestPlaceholders["appLabel"] = "sniffowireless-mobile"
     }
 
     signingConfigs {
@@ -48,7 +48,7 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            manifestPlaceholders["appLabel"] = "BanaanScan debug"
+            manifestPlaceholders["appLabel"] = "sniffowireless-mobile debug"
         }
         release {
             isMinifyEnabled = false
@@ -69,6 +69,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -88,6 +89,7 @@ dependencies {
     implementation("com.github.mik3y:usb-serial-for-android:3.11.0")
     implementation(project(":mt7921u"))
     implementation(project(":bthci"))
+    implementation(project(":sniffo-core"))
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")

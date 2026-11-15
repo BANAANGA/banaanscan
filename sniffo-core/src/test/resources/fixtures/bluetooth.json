@@ -1,0 +1,1532 @@
+{
+ "ad": [
+  {
+   "ad": {},
+   "data": ""
+  },
+  {
+   "ad": {},
+   "data": "00"
+  },
+  {
+   "ad": {
+    "flags": 6
+   },
+   "data": "02010600050961626364"
+  },
+  {
+   "ad": {},
+   "data": "03030f"
+  },
+  {
+   "ad": {},
+   "data": "1107000000000000000000000000000000"
+  },
+  {
+   "ad": {},
+   "data": "02ff4c"
+  },
+  {
+   "ad": {
+    "company_id": 76,
+    "mfg": ""
+   },
+   "data": "03ff4c00"
+  },
+  {
+   "ad": {},
+   "data": "051205000600"
+  },
+  {
+   "ad": {},
+   "data": "05120600ffff"
+  },
+  {
+   "ad": {
+    "tx_power": -128
+   },
+   "data": "020a80"
+  },
+  {
+   "ad": {
+    "appearance": "heart rate"
+   },
+   "data": "0419410300"
+  },
+  {
+   "ad": {
+    "appearance": "0xffff"
+   },
+   "data": "0319ffff"
+  },
+  {
+   "ad": {
+    "company_id": 76,
+    "ibeacon": {
+     "major": 1,
+     "minor": 2,
+     "power": -59,
+     "uuid": "00000000-0000-0000-0000-000000000000"
+    },
+    "mfg": "02150000000000000000000000000000000000010002c500"
+   },
+   "data": "1bff4c0002150000000000000000000000000000000000010002c50000"
+  }
+ ],
+ "events": [
+  {
+   "event": "043e26020100015544332211c31a0201060909546865726d6f2031020af405031a180f1803190003c3",
+   "name": "legacy ADV_IND random static",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-static",
+      "adv_interval": null,
+      "appearance": "thermometer",
+      "auracast": null,
+      "company": null,
+      "conn_interval": null,
+      "connectable": true,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": 6,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": -12,
+      "uuids": [
+       "180f",
+       "181a"
+      ]
+     },
+     "fp": {
+      "ble": {
+       "uuids": [
+        "180f",
+        "181a"
+       ]
+      }
+     },
+     "kind": "ble",
+     "mac": "c3:11:22:33:44:55",
+     "name": "Thermo 1",
+     "randomized": false,
+     "rssi": -61,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e16020104015544332211c30a0909546865726d6f2031c2",
+   "name": "legacy scan response",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-static",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": null,
+      "conn_interval": null,
+      "connectable": false,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": null,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": null,
+     "kind": "ble",
+     "mac": "c3:11:22:33:44:55",
+     "name": "Thermo 1",
+     "randomized": false,
+     "rssi": -62,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e2e0201030155443322115a2202011a1eff4c000719010e202b998f01000000000000000000000000000000000000ba",
+   "name": "legacy nonconnectable resolvable apple",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-resolvable",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": "Apple",
+      "conn_interval": null,
+      "connectable": false,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": 26,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": {
+      "ble": {
+       "apple": [
+        7
+       ],
+       "apple_model": 8206,
+       "company": 76,
+       "dual": true
+      }
+     },
+     "kind": "ble",
+     "mac": "5a:11:22:33:44:55",
+     "name": null,
+     "randomized": true,
+     "rssi": -70,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": "Apple"
+    }
+   ]
+  },
+  {
+   "event": "043e2b0201030156443322114c1f1eff4c00121900000000000000000000000000000000000000000000000100b5",
+   "name": "legacy findmy",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-resolvable",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": "Apple",
+      "conn_interval": null,
+      "connectable": false,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": null,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": {
+      "ble": {
+       "apple": [
+        18
+       ],
+       "company": 76,
+       "findmy": {
+        "battery": 0,
+        "kind": 0
+       }
+      }
+     },
+     "kind": "ble",
+     "mac": "4c:11:22:33:44:56",
+     "name": null,
+     "randomized": true,
+     "rssi": -75,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": "Apple"
+    }
+   ]
+  },
+  {
+   "event": "043e2b020103015744332211d11f1eff4c00121910000000000000000000000000000000000000000000000000b0",
+   "name": "legacy airtag",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-static",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": "Apple",
+      "conn_interval": null,
+      "connectable": false,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": null,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": {
+      "ble": {
+       "apple": [
+        18
+       ],
+       "company": 76,
+       "findmy": {
+        "battery": 0,
+        "kind": 1
+       }
+      }
+     },
+     "kind": "ble",
+     "mac": "d1:11:22:33:44:57",
+     "name": null,
+     "randomized": false,
+     "rssi": -80,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": "Apple"
+    }
+   ]
+  },
+  {
+   "event": "043e1d0201000158443322116e1102011a020a0c0aff4c0010050318a4c1e0c9",
+   "name": "legacy nearby",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-resolvable",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": "Apple",
+      "conn_interval": null,
+      "connectable": true,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": 26,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": 12,
+      "uuids": null
+     },
+     "fp": {
+      "ble": {
+       "apple": [
+        16
+       ],
+       "company": 76,
+       "dual": true
+      }
+     },
+     "kind": "ble",
+     "mac": "6e:11:22:33:44:58",
+     "name": null,
+     "randomized": true,
+     "rssi": -55,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": "Apple"
+    }
+   ]
+  },
+  {
+   "event": "043e2a020103003322113e16001e0201061aff4c000215fda50693a4e24fb1afcfc6eb0764782527114cb9c5c0",
+   "name": "legacy ibeacon public",
+   "obs": [
+    {
+     "addr_random": false,
+     "extra": {
+      "addr_type": "public",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": "Apple",
+      "conn_interval": null,
+      "connectable": false,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": 6,
+      "ibeacon": {
+       "major": 10001,
+       "minor": 19641,
+       "power": -59,
+       "uuid": "fda50693-a4e2-4fb1-afcf-c6eb07647825"
+      },
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": {
+      "ble": {
+       "apple": [
+        2
+       ],
+       "company": 76
+      }
+     },
+     "kind": "ble",
+     "mac": "00:16:3e:11:22:33",
+     "name": null,
+     "randomized": false,
+     "rssi": -64,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e2c0201030159443322112b201fff060001092002000000000000000000000000000000000000000000000000b3",
+   "name": "legacy microsoft cdp",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-nonresolvable",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": "Microsoft",
+      "conn_interval": null,
+      "connectable": false,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": null,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": "060001092002000000000000000000000000000000000000000000000000",
+      "phy": null,
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": {
+      "ble": {
+       "company": 6,
+       "ms_type": 9
+      }
+     },
+     "kind": "ble",
+     "mac": "2b:11:22:33:44:59",
+     "name": null,
+     "randomized": true,
+     "rssi": -77,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": "Microsoft"
+    }
+   ]
+  },
+  {
+   "event": "043e22020100015a44332211c4160201060bff06000300804d6f75736506094d6f757365ce",
+   "name": "legacy swift pair",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-static",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": "Microsoft",
+      "conn_interval": null,
+      "connectable": true,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": 6,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": "06000300804d6f757365",
+      "phy": null,
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": {
+      "ble": {
+       "company": 6,
+       "swift_pair": true
+      }
+     },
+     "kind": "ble",
+     "mac": "c4:11:22:33:44:5a",
+     "name": "Mouse",
+     "randomized": false,
+     "rssi": -50,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": "Microsoft"
+    }
+   ]
+  },
+  {
+   "event": "043e16020100006655443e16000a09ff75004204018060aabe",
+   "name": "legacy samsung public",
+   "obs": [
+    {
+     "addr_random": false,
+     "extra": {
+      "addr_type": "public",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": "Samsung",
+      "conn_interval": null,
+      "connectable": true,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": null,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": "75004204018060aa",
+      "phy": null,
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": {
+      "ble": {
+       "company": 117
+      }
+     },
+     "kind": "ble",
+     "mac": "00:16:3e:44:55:66",
+     "name": null,
+     "randomized": false,
+     "rssi": -66,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e2b0201000033221138c1a41f0201060f1695fe30205b0501aabbccddeeff0d0b094c5957534430334d4d43c6",
+   "name": "legacy xiaomi mibeacon",
+   "obs": [
+    {
+     "addr_random": false,
+     "extra": {
+      "addr_type": "public",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": null,
+      "conn_interval": null,
+      "connectable": true,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": 6,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": null,
+      "uuids": [
+       "fe95"
+      ]
+     },
+     "fp": {
+      "ble": {
+       "mi_product": 1371,
+       "uuids": [
+        "fe95"
+       ]
+      }
+     },
+     "kind": "ble",
+     "mac": "a4:c1:38:11:22:33",
+     "name": "LYWSD03MMC",
+     "randomized": false,
+     "rssi": -58,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e19020100015b443322114f0d02010606162cfef52494020af6d0",
+   "name": "legacy fast pair",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-resolvable",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": null,
+      "conn_interval": null,
+      "connectable": true,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": 6,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": -10,
+      "uuids": [
+       "fe2c"
+      ]
+     },
+     "fp": {
+      "ble": {
+       "fast_pair": "f52494",
+       "uuids": [
+        "fe2c"
+       ]
+      }
+     },
+     "kind": "ble",
+     "mac": "4f:11:22:33:44:5b",
+     "name": null,
+     "randomized": true,
+     "rssi": -48,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e1b020100015c44332211c50f0201060b16f6ff000f3ff1ff018000c7",
+   "name": "legacy matter",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-static",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": null,
+      "conn_interval": null,
+      "connectable": true,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": 6,
+      "ibeacon": null,
+      "matter": {
+       "discriminator": 3855,
+       "product": 32769,
+       "vendor": 65521
+      },
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": null,
+      "uuids": [
+       "fff6"
+      ]
+     },
+     "fp": {
+      "ble": {
+       "uuids": [
+        "fff6"
+       ]
+      }
+     },
+     "kind": "ble",
+     "mac": "c5:11:22:33:44:5c",
+     "name": null,
+     "randomized": false,
+     "rssi": -57,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e3e020100015d44332211c63209050d180000785634122107fb349b5f80000080001000000f1800009ecadc240ee5a9e093f3a3b50100406e051206000c00c5",
+   "name": "legacy uuids 32 and 128",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-static",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": null,
+      "conn_interval": [
+       7.5,
+       15.0
+      ],
+      "connectable": true,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": null,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": null,
+      "uuids": [
+       "180d",
+       "180f",
+       "12345678",
+       "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+      ]
+     },
+     "fp": {
+      "ble": {
+       "uuids": [
+        "180d",
+        "180f",
+        "12345678",
+        "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+       ]
+      }
+     },
+     "kind": "ble",
+     "mac": "c6:11:22:33:44:5d",
+     "name": null,
+     "randomized": false,
+     "rssi": -59,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e21020100009988773e16001502011a060853686f72740a0946756c6c206e616d65c1",
+   "name": "legacy dual mode flags",
+   "obs": [
+    {
+     "addr_random": false,
+     "extra": {
+      "addr_type": "public",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": null,
+      "conn_interval": null,
+      "connectable": true,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": 26,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": {
+      "ble": {
+       "dual": true
+      }
+     },
+     "kind": "ble",
+     "mac": "00:16:3e:77:88:99",
+     "name": "Full name",
+     "randomized": false,
+     "rssi": -63,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e13020100015e44332211c70706085368727400c1",
+   "name": "legacy shortened name only",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-static",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": null,
+      "conn_interval": null,
+      "connectable": true,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": null,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": null,
+     "kind": "ble",
+     "mac": "c7:11:22:33:44:5e",
+     "name": "Shrt",
+     "randomized": false,
+     "rssi": -63,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e1a020103015f44332211c80e0334010209310000000000000000a8",
+   "name": "legacy esl and encrypted",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-static",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": null,
+      "conn_interval": null,
+      "connectable": false,
+      "encrypted_ad": true,
+      "esl": true,
+      "ext_adv": null,
+      "flags": null,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": null,
+     "kind": "ble",
+     "mac": "c8:11:22:33:44:5f",
+     "name": null,
+     "randomized": false,
+     "rssi": -88,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e0f020103016044332211c9030201047f",
+   "name": "legacy rssi unknown",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-static",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": null,
+      "conn_interval": null,
+      "connectable": false,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": 4,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": null,
+     "kind": "ble",
+     "mac": "c9:11:22:33:44:60",
+     "name": null,
+     "randomized": false,
+     "rssi": null,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e10020103016144332211ca0405096162ba",
+   "name": "legacy truncated ad",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-static",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": null,
+      "conn_interval": null,
+      "connectable": false,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": null,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": null,
+     "kind": "ble",
+     "mac": "ca:11:22:33:44:61",
+     "name": null,
+     "randomized": false,
+     "rssi": -70,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e290d010100016244332211cb0300007fa20000000000000000000f0201060b094661722073656e736f72",
+   "name": "extended coded",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-static",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": null,
+      "conn_interval": null,
+      "connectable": true,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": true,
+      "flags": 6,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": "Coded",
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": {
+      "ble": {
+       "ext_adv": true
+      }
+     },
+     "kind": "ble",
+     "mac": "cb:11:22:33:44:62",
+     "name": "Far sensor",
+     "randomized": false,
+     "rssi": -94,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e240d010000016344332211cc010200f8b90000000000000000000a09ff75004204018060aa",
+   "name": "extended 2M secondary",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-static",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": "Samsung",
+      "conn_interval": null,
+      "connectable": false,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": true,
+      "flags": null,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": "75004204018060aa",
+      "phy": "2M",
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": {
+      "ble": {
+       "company": 117,
+       "ext_adv": true
+      }
+     },
+     "kind": "ble",
+     "mac": "cc:11:22:33:44:63",
+     "name": null,
+     "randomized": false,
+     "rssi": -71,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": "Samsung"
+    }
+   ]
+  },
+  {
+   "event": "043e2c0d01130000ccbbaa3e16000100007fcc000000000000000000120201060e094c656761637920696e20657874",
+   "name": "extended legacy pdu",
+   "obs": [
+    {
+     "addr_random": false,
+     "extra": {
+      "addr_type": "public",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": null,
+      "conn_interval": null,
+      "connectable": true,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": null,
+      "flags": 6,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": null,
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": null,
+     "kind": "ble",
+     "mac": "00:16:3e:aa:bb:cc",
+     "name": "Legacy in ext",
+     "randomized": false,
+     "rssi": -52,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e200d010900016444332211cd0100007fc400000000000000000006050952657370",
+   "name": "extended scan response",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-static",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": null,
+      "company": null,
+      "conn_interval": null,
+      "connectable": true,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": true,
+      "flags": null,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": "1M",
+      "tx_power": null,
+      "uuids": null
+     },
+     "fp": {
+      "ble": {
+       "ext_adv": true
+      }
+     },
+     "kind": "ble",
+     "mac": "cd:11:22:33:44:64",
+     "name": "Resp",
+     "randomized": false,
+     "rssi": -60,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "043e2f0d010000016544332211ce0102007fbd00000000000000000015051656180600061652183322110730507562205456",
+   "name": "extended auracast",
+   "obs": [
+    {
+     "addr_random": true,
+     "extra": {
+      "addr_type": "random-static",
+      "adv_interval": null,
+      "appearance": null,
+      "auracast": {
+       "encrypted": false,
+       "id": "112233",
+       "name": "Pub TV",
+       "quality": "high"
+      },
+      "company": null,
+      "conn_interval": null,
+      "connectable": false,
+      "encrypted_ad": null,
+      "esl": null,
+      "ext_adv": true,
+      "flags": null,
+      "ibeacon": null,
+      "matter": null,
+      "mfg_raw": null,
+      "phy": "2M",
+      "tx_power": null,
+      "uuids": [
+       "1852",
+       "1856"
+      ]
+     },
+     "fp": {
+      "ble": {
+       "ext_adv": true,
+       "uuids": [
+        "1852",
+        "1856"
+       ]
+      }
+     },
+     "kind": "ble",
+     "mac": "ce:11:22:33:44:65",
+     "name": "Pub TV",
+     "randomized": false,
+     "rssi": -67,
+     "t": "bt",
+     "ts": 1700000000.0,
+     "vendor": null
+    }
+   ]
+  },
+  {
+   "event": "04220f01332211163e0001000c025a3412c8",
+   "name": "inquiry result rssi",
+   "obs": [
+    {
+     "extra": {
+      "class": "phone",
+      "cod": "0x5a020c",
+      "tx_power": null,
+      "uuids": null
+     },
+     "kind": "bt_classic",
+     "mac": "00:3e:16:11:22:33",
+     "name": null,
+     "randomized": false,
+     "rssi": -56,
+     "t": "bt",
+     "ts": 1700000000.0
+    }
+   ]
+  },
+  {
+   "event": "04020f01665544163e000100000404203412",
+   "name": "inquiry result",
+   "obs": [
+    {
+     "extra": {
+      "class": "audio/video",
+      "cod": "0x200404",
+      "tx_power": null,
+      "uuids": null
+     },
+     "kind": "bt_classic",
+     "mac": "00:3e:16:44:55:66",
+     "name": null,
+     "randomized": false,
+     "rssi": null,
+     "t": "bt",
+     "ts": 1700000000.0
+    }
+   ]
+  },
+  {
+   "event": "042fff01998877163e00010014010c2143d007094c6170746f7005030a110c11020a0400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+   "name": "extended inquiry result",
+   "obs": [
+    {
+     "extra": {
+      "class": "computer",
+      "cod": "0x0c0114",
+      "tx_power": 4,
+      "uuids": [
+       "110a",
+       "110c"
+      ]
+     },
+     "kind": "bt_classic",
+     "mac": "00:3e:16:77:88:99",
+     "name": "Laptop",
+     "randomized": false,
+     "rssi": -48,
+     "t": "bt",
+     "ts": 1700000000.0
+    }
+   ]
+  },
+  {
+   "event": "04010100",
+   "name": "inquiry complete",
+   "obs": []
+  },
+  {
+   "event": "040e04010c2000",
+   "name": "command complete",
+   "obs": []
+  }
+ ],
+ "interval": {
+  "event": "043e19020103016644332211d20d02010409ff75004204018060aac4",
+  "obs": [
+   {
+    "addr_random": true,
+    "extra": {
+     "addr_type": "random-static",
+     "adv_interval": null,
+     "appearance": null,
+     "auracast": null,
+     "company": "Samsung",
+     "conn_interval": null,
+     "connectable": false,
+     "encrypted_ad": null,
+     "esl": null,
+     "ext_adv": null,
+     "flags": 4,
+     "ibeacon": null,
+     "matter": null,
+     "mfg_raw": "75004204018060aa",
+     "phy": null,
+     "tx_power": null,
+     "uuids": null
+    },
+    "fp": {
+     "ble": {
+      "company": 117
+     }
+    },
+    "kind": "ble",
+    "mac": "d2:11:22:33:44:66",
+    "name": null,
+    "randomized": false,
+    "rssi": -60,
+    "t": "bt",
+    "ts": 1700000000.0,
+    "vendor": "Samsung"
+   },
+   {
+    "addr_random": true,
+    "extra": {
+     "addr_type": "random-static",
+     "adv_interval": null,
+     "appearance": null,
+     "auracast": null,
+     "company": "Samsung",
+     "conn_interval": null,
+     "connectable": false,
+     "encrypted_ad": null,
+     "esl": null,
+     "ext_adv": null,
+     "flags": 4,
+     "ibeacon": null,
+     "matter": null,
+     "mfg_raw": "75004204018060aa",
+     "phy": null,
+     "tx_power": null,
+     "uuids": null
+    },
+    "fp": null,
+    "kind": "ble",
+    "mac": "d2:11:22:33:44:66",
+    "name": null,
+    "randomized": false,
+    "rssi": -60,
+    "t": "bt",
+    "ts": 1700000000.1,
+    "vendor": "Samsung"
+   },
+   {
+    "addr_random": true,
+    "extra": {
+     "addr_type": "random-static",
+     "adv_interval": null,
+     "appearance": null,
+     "auracast": null,
+     "company": "Samsung",
+     "conn_interval": null,
+     "connectable": false,
+     "encrypted_ad": null,
+     "esl": null,
+     "ext_adv": null,
+     "flags": 4,
+     "ibeacon": null,
+     "matter": null,
+     "mfg_raw": "75004204018060aa",
+     "phy": null,
+     "tx_power": null,
+     "uuids": null
+    },
+    "fp": null,
+    "kind": "ble",
+    "mac": "d2:11:22:33:44:66",
+    "name": null,
+    "randomized": false,
+    "rssi": -60,
+    "t": "bt",
+    "ts": 1700000000.2,
+    "vendor": "Samsung"
+   },
+   {
+    "addr_random": true,
+    "extra": {
+     "addr_type": "random-static",
+     "adv_interval": null,
+     "appearance": null,
+     "auracast": null,
+     "company": "Samsung",
+     "conn_interval": null,
+     "connectable": false,
+     "encrypted_ad": null,
+     "esl": null,
+     "ext_adv": null,
+     "flags": 4,
+     "ibeacon": null,
+     "matter": null,
+     "mfg_raw": "75004204018060aa",
+     "phy": null,
+     "tx_power": null,
+     "uuids": null
+    },
+    "fp": null,
+    "kind": "ble",
+    "mac": "d2:11:22:33:44:66",
+    "name": null,
+    "randomized": false,
+    "rssi": -60,
+    "t": "bt",
+    "ts": 1700000000.3,
+    "vendor": "Samsung"
+   },
+   {
+    "addr_random": true,
+    "extra": {
+     "addr_type": "random-static",
+     "adv_interval": null,
+     "appearance": null,
+     "auracast": null,
+     "company": "Samsung",
+     "conn_interval": null,
+     "connectable": false,
+     "encrypted_ad": null,
+     "esl": null,
+     "ext_adv": null,
+     "flags": 4,
+     "ibeacon": null,
+     "matter": null,
+     "mfg_raw": "75004204018060aa",
+     "phy": null,
+     "tx_power": null,
+     "uuids": null
+    },
+    "fp": null,
+    "kind": "ble",
+    "mac": "d2:11:22:33:44:66",
+    "name": null,
+    "randomized": false,
+    "rssi": -60,
+    "t": "bt",
+    "ts": 1700000000.4,
+    "vendor": "Samsung"
+   },
+   {
+    "addr_random": true,
+    "extra": {
+     "addr_type": "random-static",
+     "adv_interval": null,
+     "appearance": null,
+     "auracast": null,
+     "company": "Samsung",
+     "conn_interval": null,
+     "connectable": false,
+     "encrypted_ad": null,
+     "esl": null,
+     "ext_adv": null,
+     "flags": 4,
+     "ibeacon": null,
+     "matter": null,
+     "mfg_raw": "75004204018060aa",
+     "phy": null,
+     "tx_power": null,
+     "uuids": null
+    },
+    "fp": null,
+    "kind": "ble",
+    "mac": "d2:11:22:33:44:66",
+    "name": null,
+    "randomized": false,
+    "rssi": -60,
+    "t": "bt",
+    "ts": 1700000000.5,
+    "vendor": "Samsung"
+   },
+   {
+    "addr_random": true,
+    "extra": {
+     "addr_type": "random-static",
+     "adv_interval": null,
+     "appearance": null,
+     "auracast": null,
+     "company": "Samsung",
+     "conn_interval": null,
+     "connectable": false,
+     "encrypted_ad": null,
+     "esl": null,
+     "ext_adv": null,
+     "flags": 4,
+     "ibeacon": null,
+     "matter": null,
+     "mfg_raw": "75004204018060aa",
+     "phy": null,
+     "tx_power": null,
+     "uuids": null
+    },
+    "fp": null,
+    "kind": "ble",
+    "mac": "d2:11:22:33:44:66",
+    "name": null,
+    "randomized": false,
+    "rssi": -60,
+    "t": "bt",
+    "ts": 1700000000.6,
+    "vendor": "Samsung"
+   },
+   {
+    "addr_random": true,
+    "extra": {
+     "addr_type": "random-static",
+     "adv_interval": null,
+     "appearance": null,
+     "auracast": null,
+     "company": "Samsung",
+     "conn_interval": null,
+     "connectable": false,
+     "encrypted_ad": null,
+     "esl": null,
+     "ext_adv": null,
+     "flags": 4,
+     "ibeacon": null,
+     "matter": null,
+     "mfg_raw": "75004204018060aa",
+     "phy": null,
+     "tx_power": null,
+     "uuids": null
+    },
+    "fp": null,
+    "kind": "ble",
+    "mac": "d2:11:22:33:44:66",
+    "name": null,
+    "randomized": false,
+    "rssi": -60,
+    "t": "bt",
+    "ts": 1700000000.7,
+    "vendor": "Samsung"
+   },
+   {
+    "addr_random": true,
+    "extra": {
+     "addr_type": "random-static",
+     "adv_interval": 100,
+     "appearance": null,
+     "auracast": null,
+     "company": "Samsung",
+     "conn_interval": null,
+     "connectable": false,
+     "encrypted_ad": null,
+     "esl": null,
+     "ext_adv": null,
+     "flags": 4,
+     "ibeacon": null,
+     "matter": null,
+     "mfg_raw": "75004204018060aa",
+     "phy": null,
+     "tx_power": null,
+     "uuids": null
+    },
+    "fp": null,
+    "kind": "ble",
+    "mac": "d2:11:22:33:44:66",
+    "name": null,
+    "randomized": false,
+    "rssi": -60,
+    "t": "bt",
+    "ts": 1700000000.8,
+    "vendor": "Samsung"
+   },
+   {
+    "addr_random": true,
+    "extra": {
+     "addr_type": "random-static",
+     "adv_interval": null,
+     "appearance": null,
+     "auracast": null,
+     "company": "Samsung",
+     "conn_interval": null,
+     "connectable": false,
+     "encrypted_ad": null,
+     "esl": null,
+     "ext_adv": null,
+     "flags": 4,
+     "ibeacon": null,
+     "matter": null,
+     "mfg_raw": "75004204018060aa",
+     "phy": null,
+     "tx_power": null,
+     "uuids": null
+    },
+    "fp": null,
+    "kind": "ble",
+    "mac": "d2:11:22:33:44:66",
+    "name": null,
+    "randomized": false,
+    "rssi": -60,
+    "t": "bt",
+    "ts": 1700000000.9,
+    "vendor": "Samsung"
+   }
+  ],
+  "times": [
+   1700000000.0,
+   1700000000.1,
+   1700000000.2,
+   1700000000.3,
+   1700000000.4,
+   1700000000.5,
+   1700000000.6,
+   1700000000.7,
+   1700000000.8,
+   1700000000.9
+  ]
+ },
+ "meta": {
+  "sniffowireless": "1f8ef75",
+  "ts": 1700000000.0
+ }
+}

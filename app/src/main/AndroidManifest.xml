@@ -19,6 +19,13 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
+    <!-- Sensor mode: a foreground service that keeps capturing and uploading with the screen off -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
     <uses-feature android:name="android.hardware.wifi" android:required="false" />
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
@@ -27,11 +34,12 @@
 
     <!-- Cleartext is needed to read UPnP descriptions and device admin pages on the LAN -->
     <application
+        android:name=".sensor.SniffoApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="${appLabel}"
         android:supportsRtl="true"
-        android:theme="@style/Theme.BanaanScan"
+        android:theme="@style/Theme.Sniffo"
         android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
@@ -48,5 +56,9 @@
                 android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
                 android:resource="@xml/zigbee_dongles" />
         </activity>
+        <service
+            android:name=".sensor.SensorService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice|location" />
     </application>
 </manifest>

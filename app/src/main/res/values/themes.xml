@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.BanaanScan" parent="android:Theme.Material.NoActionBar" />
+    <style name="Theme.Sniffo" parent="android:Theme.Material.NoActionBar">
+        <!-- The app starts dark; this avoids a white flash before Compose draws. -->
+        <item name="android:windowBackground">@color/sniffo_bg</item>
+        <item name="android:statusBarColor">@color/sniffo_bg</item>
+        <item name="android:navigationBarColor">@color/sniffo_bg</item>
+    </style>
 </resources>

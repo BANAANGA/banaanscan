@@ -1,4 +1,4 @@
-The HCI code in this folder is written for BanaanScan from the Bluetooth Core specification. The Realtek firmware
+The HCI code in this folder is written for sniffowireless-mobile from the Bluetooth Core specification. The Realtek firmware
 loader follows the firmware file layout as used by linux-firmware's rtl_bt/ files; no Linux driver code is copied.
 
 The Realtek firmware (rtl8761bu_fw.bin, rtl8761bu_config.bin) is not part of this code. It comes from the

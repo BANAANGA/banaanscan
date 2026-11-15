@@ -6,5 +6,5 @@ File: rtl_bt/rtl8761bu_config.bin
 Licence: Redistributable. See LICENCE.rtlwifi_firmware.txt for details.
 SPDX-License-Identifier: LicenseRef-LICENCE.rtlwifi_firmware.txt
 
-Firmware version 0xdfc6d922. BanaanScan uploads these files unmodified to Realtek RTL8761BU USB Bluetooth adapters
+Firmware version 0xdfc6d922. sniffowireless-mobile uploads these files unmodified to Realtek RTL8761BU USB Bluetooth adapters
 (such as the TP-Link UB500 and UB500 Plus).
