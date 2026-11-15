@@ -16,5 +16,5 @@ dependencyResolutionManagement {
         }
     }
 }
-rootProject.name = "BanaanScan"
-include(":app", ":mt7921u", ":mt7921u-pc", ":bthci", ":bthci-pc")
+rootProject.name = "sniffowireless-mobile"
+include(":app", ":mt7921u", ":mt7921u-pc", ":bthci", ":bthci-pc", ":sniffo-core")

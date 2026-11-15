@@ -1,6 +1,6 @@
 # Bluetooth over a USB adapter: PC prototype
 
-BanaanScan talks to USB Bluetooth adapters directly in HCI, the standard controller protocol, so on Android it needs no
+sniffowireless-mobile talks to USB Bluetooth adapters directly in HCI, the standard controller protocol, so on Android it needs no
 root and leaves the phone's own Bluetooth alone. Developed with a TP-Link UB500 Plus (Realtek RTL8761BU, `2357:0604`).
 
 - `bthci/` is the library, plain Kotlin shared with the app: HCI commands and events, BLE scanning (legacy and
@@ -48,5 +48,5 @@ the adapter sometimes misses the first command; the scanner retries it.
 The scan log is kept in the app's files:
 
 ```bash
-adb shell run-as io.github.banaanga.banaanscan.debug cat files/bthci/log.txt
+adb shell run-as io.github.banaanga.sniffowireless.mobile.debug cat files/bthci/log.txt
 ```

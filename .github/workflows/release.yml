@@ -24,11 +24,11 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Run tests
-        run: ./gradlew :app:testDebugUnitTest :mt7921u:test --console=plain
+        run: ./gradlew :app:testDebugUnitTest :mt7921u:test :bthci:test :sniffo-core:test --console=plain
 
       - name: Build signed APK
         env:
-          BANAANSCAN_VERSION: ${{ github.ref_name }}
+          SNIFFO_VERSION: ${{ github.ref_name }}
           RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
@@ -38,17 +38,18 @@ jobs:
           echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$RELEASE_KEYSTORE_FILE"
           ./gradlew :app:assembleRelease --console=plain
           rm -f "$RELEASE_KEYSTORE_FILE"
-          cp app/build/outputs/apk/release/app-release.apk "banaanscan-${GITHUB_REF_NAME}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "sniffowireless-mobile-${GITHUB_REF_NAME}.apk"
 
       - name: Check the signature
         run: |
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
-          "$APKSIGNER" verify --print-certs "banaanscan-${GITHUB_REF_NAME}.apk" | tee signature.txt
+          "$APKSIGNER" verify --print-certs "sniffowireless-mobile-${GITHUB_REF_NAME}.apk" | tee signature.txt
+          # The release key was made when the app was called BanaanScan; its certificate keeps that name.
           grep -q "CN=BanaanScan" signature.txt
 
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "banaanscan-${GITHUB_REF_NAME}.apk" \
-            --title "BanaanScan ${GITHUB_REF_NAME}" --generate-notes
+          gh release create "$GITHUB_REF_NAME" "sniffowireless-mobile-${GITHUB_REF_NAME}.apk" \
+            --title "sniffowireless-mobile ${GITHUB_REF_NAME}" --generate-notes

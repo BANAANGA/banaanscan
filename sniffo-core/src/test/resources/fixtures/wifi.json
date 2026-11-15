@@ -1,0 +1,1695 @@
+{
+ "cases": [
+  {
+   "frame": "80000000ffffffffffff0211223344550211223344554006081a99be1c00000064000431000c4578616d706c6520486f6d6501088c129824b048606c03012407064e4c49010d140b05070040000030140100000fac040100000fac040100000fac028c002d1aef1917ffff0000000000000000000000000000000000000000003d1624050000000000000000000000000000000000000000bf0cb6799133faff0000faff00004605720000000036031234017f0b0400488001404040c00110ff16230000000000001c00000000000000000000fafffaffff0724f03f00150000dd510050f204104a00011010440001021021000b4578616d706c65436f7270102300074d6f64656c2058102400064d582d3130301011000f4c6976696e6720726f6f6d20626f781054000800060050f2040001dd070017f20a000103dd090010180201000c0000dd180050f2020001800003a4000027a4000042435e0062322f00c911000d832500021122334477000000000000dd0e00156d0148616c6c776179204150",
+   "freq": 5180,
+   "name": "beacon full WPA2",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 36,
+     "csa": null,
+     "enc": "WPA2/PSK",
+     "extra": {
+      "ap": {
+       "ap_name": "Hallway AP",
+       "ap_name_src": "Ubiquiti",
+       "beacon_protection": true,
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "fb07eefaa4fc",
+       "bss_color": 21,
+       "country": "NL",
+       "country_env": "indoor",
+       "ftm": true,
+       "load": {
+        "sta": 7,
+        "util": 25
+       },
+       "mbssid": true,
+       "rnr": [
+        {
+         "bssid": "02:11:22:33:44:77",
+         "ch": 37,
+         "oc": 131
+        }
+       ],
+       "roaming": [
+        "11k",
+        "11r",
+        "11v"
+       ],
+       "rsn": {
+        "akm": [
+         "PSK"
+        ],
+        "group": "CCMP",
+        "pairwise": [
+         "CCMP"
+        ],
+        "pmf": "optional"
+       },
+       "wps_configured": true
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "caps": [
+         "LDPC",
+         "TX STBC",
+         "short GI 20 MHz",
+         "RX STBC",
+         "SU beamformee",
+         "MU-MIMO beamformee",
+         "beamformer",
+         "802.11k radio measurement",
+         "802.11r fast roaming",
+         "802.11v BSS transition",
+         "interworking",
+         "WNM notification",
+         "operating mode notification",
+         "FTM initiator",
+         "FILS"
+        ],
+        "dsss": false,
+        "extcap": "0400488001404040c00110"
+       },
+       "extcap_len": 11,
+       "gen": 6,
+       "he": true,
+       "ht": true,
+       "rsn": true,
+       "sig": "1,7,11,48,45,61,191,70,54,127,255:35,255:36,221:00:50:f2:4,221:00:17:f2:10,221:00:10:18:2,221:00:50:f2:2,201,221:00:15:6d:1",
+       "ss": 2,
+       "vendors": [
+        "00:50:f2",
+        "00:17:f2",
+        "00:10:18",
+        "00:15:6d"
+       ],
+       "vht": true,
+       "width": 160,
+       "wps": {
+        "category": 6,
+        "device_name": "Living room box",
+        "manufacturer": "ExampleCorp",
+        "model": "Model X",
+        "model_number": "MX-100",
+        "subcategory": 1
+       }
+      }
+     },
+     "freq": 5180,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -47,
+     "ssid": "Example Home",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -47,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344660211223344664006081a99be1c00000064000431000c4578616d706c65205750413301088c129824b048606c3d169505000000000000000000000000000000000000000030140100000fac040100000fac040100000fac08cc00ff16230000000000001c00000000000000000000fafffaffff0a6c000002000000000000ff0b6b00000000000000000000ff0724f03f00050000",
+   "freq": 5745,
+   "name": "beacon WPA3 only",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 149,
+     "csa": null,
+     "enc": "WPA3/SAE",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "871ae53ec6d4",
+       "bss_color": 5,
+       "mlo": true,
+       "rsn": {
+        "akm": [
+         "SAE"
+        ],
+        "group": "CCMP",
+        "pairwise": [
+         "CCMP"
+        ],
+        "pmf": "required"
+       }
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": false
+       },
+       "eht": true,
+       "gen": 7,
+       "he": true,
+       "rsn": true,
+       "sig": "1,61,48,255:35,255:108,255:107,255:36",
+       "ss": 2,
+       "width": 320
+      }
+     },
+     "freq": 5745,
+     "mac": "02:11:22:33:44:66",
+     "rssi": -60,
+     "ssid": "Example WPA3",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -60,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344550211223344554006081a99be1c00000064000431000b4578616d706c65204d6978010882848b960c12182403010632043048606c30180100000fac040100000fac040200000fac02000fac0880002d1aef1917ffff0000000000000000000000000000000000000000003d16060500000000000000000000000000000000000000007f0b0400488001404040c00110",
+   "freq": 2437,
+   "name": "beacon transition",
+   "obs": [
+    {
+     "band": "2.4",
+     "channel": 6,
+     "csa": null,
+     "enc": "WPA3-transition/PSK",
+     "extra": {
+      "ap": {
+       "beacon_protection": true,
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "65b80fc0c368",
+       "ftm": true,
+       "mbssid": true,
+       "roaming": [
+        "11v"
+       ],
+       "rsn": {
+        "akm": [
+         "PSK",
+         "SAE"
+        ],
+        "group": "CCMP",
+        "pairwise": [
+         "CCMP"
+        ],
+        "pmf": "optional",
+        "transition": true
+       }
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "caps": [
+         "LDPC",
+         "TX STBC",
+         "short GI 20 MHz",
+         "RX STBC",
+         "802.11v BSS transition",
+         "interworking",
+         "WNM notification",
+         "operating mode notification",
+         "FTM initiator",
+         "FILS"
+        ],
+        "dsss": true,
+        "extcap": "0400488001404040c00110"
+       },
+       "extcap_len": 11,
+       "gen": 4,
+       "ht": true,
+       "rsn": true,
+       "sig": "1,50,48,45,61,127",
+       "ss": 2,
+       "width": 40
+      }
+     },
+     "freq": 2437,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -55,
+     "ssid": "Example Mix",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -55,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344550211223344554006081a99be1c00000064000431000b4578616d706c6520456e74010882848b960c121824030101301c0100000fac090200000fac04000fac090200000fac18000fac01cc00",
+   "freq": 2412,
+   "name": "beacon SAE-EXT and 802.1X",
+   "obs": [
+    {
+     "band": "2.4",
+     "channel": 1,
+     "csa": null,
+     "enc": "WPA2/24",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "7d8dbdebb368",
+       "rsn": {
+        "akm": [
+         "SAE-EXT",
+         "802.1X"
+        ],
+        "group": "GCMP-256",
+        "pairwise": [
+         "CCMP",
+         "GCMP-256"
+        ],
+        "pmf": "required"
+       }
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": true
+       },
+       "rsn": true,
+       "sig": "1,48"
+      }
+     },
+     "freq": 2412,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -71,
+     "ssid": "Example Ent",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -71,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344660211223344664006081a99be1c000000640004210000010882848b960c12182403010b",
+   "freq": 2462,
+   "name": "beacon hidden open",
+   "obs": [
+    {
+     "band": "2.4",
+     "channel": 11,
+     "csa": null,
+     "enc": "OPN",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "b8fcdccb3d94"
+      },
+      "hidden": true
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": true
+       },
+       "sig": "1"
+      }
+     },
+     "freq": 2462,
+     "mac": "02:11:22:33:44:66",
+     "rssi": -80,
+     "ssid": null,
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -80,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344660211223344664006081a99be1c000000640004210009000000000000000000010882848b960c12182403010b",
+   "freq": 2462,
+   "name": "beacon zero-filled ssid",
+   "obs": [
+    {
+     "band": "2.4",
+     "channel": 11,
+     "csa": null,
+     "enc": "OPN",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "b8fcdccb3d94"
+      },
+      "hidden": true
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": true
+       },
+       "sig": "1"
+      }
+     },
+     "freq": 2462,
+     "mac": "02:11:22:33:44:66",
+     "rssi": -80,
+     "ssid": null,
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -80,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344550211223344554006081a99be1c0000006400110400034f6c64010882848b960c121824030101",
+   "freq": 2412,
+   "name": "beacon WEP",
+   "obs": [
+    {
+     "band": "2.4",
+     "channel": 1,
+     "csa": null,
+     "enc": "WEP",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "7420e47932ee"
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": true
+       },
+       "sig": "1"
+      }
+     },
+     "freq": 2412,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -66,
+     "ssid": "Old",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -66,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344550211223344554006081a99be1c0000006400043100054f6c646572010882848b960c121824030101dd160050f20101000050f20201000050f20201000050f202",
+   "freq": 2412,
+   "name": "beacon WPA1",
+   "obs": [
+    {
+     "band": "2.4",
+     "channel": 1,
+     "csa": null,
+     "enc": "WPA/PSK",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "1cef25c19eb8",
+       "wpa1": true
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": true
+       },
+       "sig": "1,221:00:50:f2:1",
+       "vendors": [
+        "00:50:f2"
+       ]
+      }
+     },
+     "freq": 2412,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -66,
+     "ssid": "Older",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -66,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344550211223344554006081a99be1c0000006400043100054d69786564010882848b960c12182403010130140100000fac040100000fac040100000fac020c00dd160050f20101000050f20201000050f20201000050f202",
+   "freq": 2412,
+   "name": "beacon WPA1 + WPA2",
+   "obs": [
+    {
+     "band": "2.4",
+     "channel": 1,
+     "csa": null,
+     "enc": "WPA/PSK,WPA2/PSK",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "db65cd815840",
+       "rsn": {
+        "akm": [
+         "PSK"
+        ],
+        "group": "CCMP",
+        "pairwise": [
+         "CCMP"
+        ],
+        "pmf": "off"
+       },
+       "wpa1": true
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": true
+       },
+       "rsn": true,
+       "sig": "1,48,221:00:50:f2:1",
+       "vendors": [
+        "00:50:f2"
+       ]
+      }
+     },
+     "freq": 2412,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -66,
+     "ssid": "Mixed",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -66,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344550211223344554006081a99be1c00000064000431000344465301088c129824b048606c25030164053d163405000000000000000000000000000000000000000030140100000fac040100000fac040100000fac020c00",
+   "freq": 5260,
+   "name": "beacon CSA on DFS",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 52,
+     "csa": {
+      "count": 5,
+      "mode": 1,
+      "new_channel": 100
+     },
+     "enc": "WPA2/PSK",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "fdd2c9e45ab3",
+       "rsn": {
+        "akm": [
+         "PSK"
+        ],
+        "group": "CCMP",
+        "pairwise": [
+         "CCMP"
+        ],
+        "pmf": "off"
+       }
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": false
+       },
+       "rsn": true,
+       "sig": "1,37,61,48"
+      }
+     },
+     "freq": 5260,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -58,
+     "ssid": "DFS",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -58,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344550211223344554006081a99be1c0000006400043100044446533201088c129824b048606c3c04018034093d163405000000000000000000000000000000000000000030140100000fac040100000fac040100000fac020c00",
+   "freq": 5260,
+   "name": "beacon extended CSA",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 52,
+     "csa": {
+      "count": 9,
+      "mode": 1,
+      "new_channel": 52,
+      "op_class": 128
+     },
+     "enc": "WPA2/PSK",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "71b9e091b784",
+       "rsn": {
+        "akm": [
+         "PSK"
+        ],
+        "group": "CCMP",
+        "pairwise": [
+         "CCMP"
+        ],
+        "pmf": "off"
+       }
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": false
+       },
+       "rsn": true,
+       "sig": "1,60,61,48"
+      }
+     },
+     "freq": 5260,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -58,
+     "ssid": "DFS2",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -58,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344660211223344664006081a99be1c00000064001011000353697801088c129824b048606c30140100000fac040100000fac040100000fac08c000ff16230000000000001c00000000000000000000fafffaffff0724f03f003f0000ff033b0000",
+   "freq": 6135,
+   "name": "beacon 6 GHz",
+   "obs": [
+    {
+     "band": "6",
+     "channel": 37,
+     "csa": null,
+     "enc": "WPA3/SAE",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "9b4035aa1e1e",
+       "bss_color": 63,
+       "rsn": {
+        "akm": [
+         "SAE"
+        ],
+        "group": "CCMP",
+        "pairwise": [
+         "CCMP"
+        ],
+        "pmf": "required"
+       }
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": false
+       },
+       "gen": 6,
+       "he": true,
+       "rsn": true,
+       "sig": "1,48,255:35,255:36,255:59",
+       "ss": 2,
+       "width": 160
+      }
+     },
+     "freq": 6135,
+     "mac": "02:11:22:33:44:66",
+     "rssi": -62,
+     "ssid": "Six",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -62,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344660211223344664006081a99be1c00000064000431000353697801088c129824b048606c30140100000fac040100000fac040100000fac08c000",
+   "freq": 5185,
+   "name": "beacon 6 GHz labelled 5 GHz",
+   "obs": [
+    {
+     "band": "6",
+     "channel": 37,
+     "csa": null,
+     "enc": "WPA3/SAE",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "a5904267bd12",
+       "rsn": {
+        "akm": [
+         "SAE"
+        ],
+        "group": "CCMP",
+        "pairwise": [
+         "CCMP"
+        ],
+        "pmf": "required"
+       }
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": false
+       },
+       "rsn": true,
+       "sig": "1,48"
+      }
+     },
+     "freq": 6135,
+     "mac": "02:11:22:33:44:66",
+     "rssi": -62,
+     "ssid": "Six",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -62,
+   "tuned": 6135
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344550211223344554006081a99be1c0000006400043100064e6f46726571010882848b960c121824030106",
+   "freq": null,
+   "name": "beacon no radiotap frequency",
+   "obs": [
+    {
+     "band": "2.4",
+     "channel": 6,
+     "csa": null,
+     "enc": "OPN",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "a4a45e205af7"
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": true
+       },
+       "sig": "1"
+      }
+     },
+     "freq": 2437,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -50,
+     "ssid": "NoFreq",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -50,
+   "tuned": 2437
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344550211223344554006081a99be1c000000640004310004436f727001088c129824b048606c3d166405000000000000000000000000000000000000000030140100000fac040100000fac040100000fac050c0072056d657368796b0110470103dd12000b8601030061702d326e642d666c6f6f72dd130050f204104a00011010440001011057000101",
+   "freq": 5500,
+   "name": "beacon mesh, interworking, mbssid, aruba",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 100,
+     "csa": null,
+     "enc": "WPA2/WPA-SHA256",
+     "extra": {
+      "ap": {
+       "ap_name": "ap-2nd-floor",
+       "ap_name_src": "Aruba",
+       "aruba": [
+        "AP name"
+       ],
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "0d8fef9f2b96",
+       "interworking": true,
+       "mbssid": true,
+       "mesh_id": "meshy",
+       "rsn": {
+        "akm": [
+         "802.1X-SHA256"
+        ],
+        "group": "CCMP",
+        "pairwise": [
+         "CCMP"
+        ],
+        "pmf": "off"
+       },
+       "wps_configured": false,
+       "wps_locked": true
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": false
+       },
+       "rsn": true,
+       "sig": "1,61,48,114,107,71,221:00:0b:86:1,221:00:50:f2:4",
+       "vendors": [
+        "00:0b:86",
+        "00:50:f2"
+       ]
+      }
+     },
+     "freq": 5500,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -70,
+     "ssid": "Corp",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -70,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff021122334455021122334455400600000000000000006400043100034e6577010882848b960c121824030106",
+   "freq": 2437,
+   "name": "beacon no tsf uptime",
+   "obs": [
+    {
+     "band": "2.4",
+     "channel": 6,
+     "csa": null,
+     "enc": "OPN",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "bsig": "a4a45e205af7"
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": true
+       },
+       "sig": "1"
+      }
+     },
+     "freq": 2437,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -50,
+     "ssid": "New",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": null
+    }
+   ],
+   "rssi": -50,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344550211223344554006081a99be1c000000640004310009436166c3a920e29895010882848b960c121824030106",
+   "freq": 2437,
+   "name": "beacon unicode ssid",
+   "obs": [
+    {
+     "band": "2.4",
+     "channel": 6,
+     "csa": null,
+     "enc": "OPN",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "a4a45e205af7"
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": true
+       },
+       "sig": "1"
+      }
+     },
+     "freq": 2437,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -50,
+     "ssid": "Caf\u00e9 \u2615",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -50,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0211223344550211223344554006081a99be1c000000640004310004436166e9010882848b960c121824030106",
+   "freq": 2437,
+   "name": "beacon latin-1 ssid",
+   "obs": [
+    {
+     "band": "2.4",
+     "channel": 6,
+     "csa": null,
+     "enc": "OPN",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "a4a45e205af7"
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": true
+       },
+       "sig": "1"
+      }
+     },
+     "freq": 2437,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -50,
+     "ssid": "Caf\u00e9",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": 123456789000
+    }
+   ],
+   "rssi": -50,
+   "tuned": null
+  },
+  {
+   "frame": "5000000006aabbccddee0211223344550211223344554006081a99be1c00000064000431000c4578616d706c6520486f6d6501088c129824b048606c3d162405000000000000000000000000000000000000000030140100000fac040100000fac040100000fac020c00",
+   "freq": 5180,
+   "name": "probe response",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 36,
+     "csa": null,
+     "enc": "WPA2/PSK",
+     "extra": {
+      "ap": {
+       "beacon_tu": 100,
+       "boot": 1699876543,
+       "bsig": "181be0006d38",
+       "rsn": {
+        "akm": [
+         "PSK"
+        ],
+        "group": "CCMP",
+        "pairwise": [
+         "CCMP"
+        ],
+        "pmf": "off"
+       }
+      }
+     },
+     "fp": {
+      "src": "beacon",
+      "wifi": {
+       "capinfo": {
+        "dsss": false
+       },
+       "rsn": true,
+       "sig": "1,61,48"
+      }
+     },
+     "freq": 5180,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -52,
+     "ssid": "Example Home",
+     "t": "wifi_ap",
+     "ts": 1700000000.0,
+     "tsf": null
+    },
+    {
+     "band": "5",
+     "bssid": null,
+     "frame": "probe_resp",
+     "freq": 5180,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "rssi": null,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -52,
+   "tuned": null
+  },
+  {
+   "frame": "40000000ffffffffffff06aabbccddeeffffffffffff800c0000010882848b960c12182432043048606c2d1aef1917ffff0000000000000000000000000000000000000000007f0b0400488001404040c001107f080000080000000040dd07506f9a160a0100dd070017f20a000103",
+   "freq": 2437,
+   "name": "probe request wildcard",
+   "obs": [
+    {
+     "band": "2.4",
+     "bssid": null,
+     "fp": {
+      "src": "probe",
+      "wifi": {
+       "capinfo": {
+        "caps": [
+         "LDPC",
+         "TX STBC",
+         "short GI 20 MHz",
+         "RX STBC",
+         "802.11v BSS transition",
+         "interworking",
+         "WNM notification",
+         "operating mode notification",
+         "FTM initiator",
+         "FILS"
+        ],
+        "dsss": true,
+        "extcap": "0000080000000040"
+       },
+       "extcap_len": 8,
+       "gen": 4,
+       "ht": true,
+       "sig": "1,50,45,127,127,221:50:6f:9a:22,221:00:17:f2:10",
+       "ss": 2,
+       "vendors": [
+        "50:6f:9a",
+        "00:17:f2"
+       ],
+       "wfa": [
+        "MBO/OCE (agile multiband)"
+       ],
+       "width": 40
+      }
+     },
+     "frame": "probe",
+     "freq": 2437,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "probe": null,
+     "rssi": -40,
+     "seq": 200,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -40,
+   "tuned": null
+  },
+  {
+   "frame": "40000000ffffffffffff06aabbccddeeffffffffffff800c000c4578616d706c6520486f6d6501088c129824b048606c2d1aef1917ffff000000000000000000000000000000000000000000bf0cb6799133faff0000faff0000ff16230000000000001c00000000000000000000fafffaff460572000000002406010d240495052102fb143b055151737480dd510050f204104a00011010440001021021000b4578616d706c65436f7270102300074d6f64656c2058102400064d582d3130301011000f4c6976696e6720726f6f6d20626f781054000800060050f2040001dd28506f9a0902020025000d1c0006aabbccddee018800030050f204000100101100075072696e746572",
+   "freq": 2437,
+   "name": "probe request named",
+   "obs": [
+    {
+     "band": "2.4",
+     "bssid": null,
+     "fp": {
+      "src": "probe",
+      "wifi": {
+       "capinfo": {
+        "caps": [
+         "LDPC",
+         "TX STBC",
+         "short GI 20 MHz",
+         "RX STBC",
+         "SU beamformee",
+         "MU-MIMO beamformee",
+         "beamformer",
+         "802.11k radio measurement"
+        ],
+        "chan_count": 22,
+        "dsss": false,
+        "opcls": [
+         81,
+         81,
+         115,
+         116,
+         128
+        ],
+        "txp": [
+         -5,
+         20
+        ]
+       },
+       "gen": 6,
+       "he": true,
+       "ht": true,
+       "p2p": {
+        "category": 3,
+        "name": "Printer",
+        "subcategory": 1
+       },
+       "sig": "1,45,191,255:35,70,36,33,59,221:00:50:f2:4,221:50:6f:9a:9",
+       "ss": 2,
+       "vendors": [
+        "00:50:f2",
+        "50:6f:9a"
+       ],
+       "vht": true,
+       "wfa": [
+        "Wi-Fi Direct (P2P)"
+       ],
+       "width": 160,
+       "wps": {
+        "category": 6,
+        "device_name": "Living room box",
+        "manufacturer": "ExampleCorp",
+        "model": "Model X",
+        "model_number": "MX-100",
+        "subcategory": 1
+       }
+      }
+     },
+     "frame": "probe",
+     "freq": 2437,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "probe": "Example Home",
+     "rssi": -41,
+     "seq": 200,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -41,
+   "tuned": null
+  },
+  {
+   "frame": "40000000ffffffffffff00163e123456ffffffffffff800c000001088c129824b048606c2d1aef1917ffff0000000000000000000000000000000000000000007f0b0400488001404040c00110",
+   "freq": 5180,
+   "name": "probe request public",
+   "obs": [
+    {
+     "band": "5",
+     "bssid": null,
+     "fp": {
+      "src": "probe",
+      "wifi": {
+       "capinfo": {
+        "caps": [
+         "LDPC",
+         "TX STBC",
+         "short GI 20 MHz",
+         "RX STBC",
+         "802.11v BSS transition",
+         "interworking",
+         "WNM notification",
+         "operating mode notification",
+         "FTM initiator",
+         "FILS"
+        ],
+        "dsss": false,
+        "extcap": "0400488001404040c00110"
+       },
+       "extcap_len": 11,
+       "gen": 4,
+       "ht": true,
+       "sig": "1,45,127",
+       "ss": 2,
+       "width": 40
+      }
+     },
+     "frame": "probe",
+     "freq": 5180,
+     "mac": "00:16:3e:12:34:56",
+     "probe": null,
+     "rssi": -44,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -44,
+   "tuned": null
+  },
+  {
+   "frame": "0000000002112233445506aabbccddee021122334455800c14310a00000c4578616d706c6520486f6d6501088c129824b048606c30140100000fac040100000fac040100000fac020c002d1aef1917ffff000000000000000000000000000000000000000000bf0cb6799133faff0000faff0000ff16230000000000001c00000000000000000000fafffaff7f0b0400488001404040c00110460572000000002406010d240495052102fb14",
+   "freq": 5180,
+   "name": "association request",
+   "obs": [
+    {
+     "band": "5",
+     "bssid": "02:11:22:33:44:55",
+     "fp": {
+      "src": "assoc",
+      "wifi": {
+       "capinfo": {
+        "caps": [
+         "LDPC",
+         "TX STBC",
+         "short GI 20 MHz",
+         "RX STBC",
+         "SU beamformee",
+         "MU-MIMO beamformee",
+         "beamformer",
+         "802.11v BSS transition",
+         "interworking",
+         "WNM notification",
+         "operating mode notification",
+         "FTM initiator",
+         "FILS",
+         "802.11k radio measurement"
+        ],
+        "chan_count": 22,
+        "dsss": false,
+        "extcap": "0400488001404040c00110",
+        "txp": [
+         -5,
+         20
+        ]
+       },
+       "extcap_len": 11,
+       "gen": 6,
+       "he": true,
+       "ht": true,
+       "rsn": true,
+       "sig": "1,48,45,191,255:35,127,70,36,33",
+       "ss": 2,
+       "vht": true,
+       "width": 160
+      }
+     },
+     "frame": "assoc",
+     "freq": 5180,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "rssi": -43,
+     "seq": 200,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    },
+    {
+     "band": "5",
+     "channel": 36,
+     "freq": 5180,
+     "mac": "02:11:22:33:44:55",
+     "rssi": null,
+     "t": "wifi_ap",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -43,
+   "tuned": null
+  },
+  {
+   "frame": "2000000002112233446606aabbccddee021122334466800c14310a00021122334455000c4578616d706c6520486f6d6501088c129824b048606c30140100000fac040100000fac040100000fac020c002d1aef1917ffff0000000000000000000000000000000000000000003603123401",
+   "freq": 5180,
+   "name": "reassociation request",
+   "obs": [
+    {
+     "band": "5",
+     "bssid": "02:11:22:33:44:66",
+     "fp": {
+      "src": "assoc",
+      "wifi": {
+       "capinfo": {
+        "caps": [
+         "LDPC",
+         "TX STBC",
+         "short GI 20 MHz",
+         "RX STBC",
+         "802.11r fast roaming"
+        ],
+        "dsss": false
+       },
+       "gen": 4,
+       "ht": true,
+       "rsn": true,
+       "sig": "1,48,45,54",
+       "ss": 2,
+       "width": 40
+      }
+     },
+     "frame": "assoc",
+     "freq": 5180,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "rssi": -43,
+     "seq": 200,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    },
+    {
+     "band": "5",
+     "channel": 36,
+     "freq": 5180,
+     "mac": "02:11:22:33:44:66",
+     "rssi": null,
+     "t": "wifi_ap",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -43,
+   "tuned": null
+  },
+  {
+   "frame": "1000000006aabbccddee021122334455021122334455800c0431000001c001088c129824b048606c",
+   "freq": 5180,
+   "name": "association response ok",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 36,
+     "freq": 5180,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -45,
+     "t": "wifi_ap",
+     "ts": 1700000000.0
+    },
+    {
+     "band": "5",
+     "bssid": "02:11:22:33:44:55",
+     "frame": "assoc",
+     "freq": 5180,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "rssi": null,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -45,
+   "tuned": null
+  },
+  {
+   "frame": "1000000006aabbccddee021122334455021122334455800c04311100000001088c129824b048606c",
+   "freq": 5180,
+   "name": "association response refused",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 36,
+     "freq": 5180,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -45,
+     "t": "wifi_ap",
+     "ts": 1700000000.0
+    },
+    {
+     "band": "5",
+     "bssid": null,
+     "frame": "assoc_fail",
+     "freq": 5180,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "rssi": null,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -45,
+   "tuned": null
+  },
+  {
+   "frame": "3000000006aabbccddee021122334466021122334466800c0431000002c0",
+   "freq": 5180,
+   "name": "reassociation response",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 36,
+     "freq": 5180,
+     "mac": "02:11:22:33:44:66",
+     "rssi": -45,
+     "t": "wifi_ap",
+     "ts": 1700000000.0
+    },
+    {
+     "band": "5",
+     "bssid": "02:11:22:33:44:66",
+     "frame": "assoc",
+     "freq": 5180,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "rssi": null,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -45,
+   "tuned": null
+  },
+  {
+   "frame": "b000000006aabbccddee021122334455021122334455800c000002000000",
+   "freq": 5180,
+   "name": "auth from AP",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 36,
+     "freq": 5180,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -45,
+     "t": "wifi_ap",
+     "ts": 1700000000.0
+    },
+    {
+     "band": "5",
+     "bssid": null,
+     "frame": "auth",
+     "freq": 5180,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "rssi": null,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -45,
+   "tuned": null
+  },
+  {
+   "frame": "b000000002112233445506aabbccddee021122334455800c000001000000",
+   "freq": 5180,
+   "name": "auth from client",
+   "obs": [
+    {
+     "band": "5",
+     "bssid": null,
+     "frame": "auth",
+     "freq": 5180,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "rssi": -45,
+     "seq": 200,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -45,
+   "tuned": null
+  },
+  {
+   "frame": "b000000002112233445506aabbccddee021122334455800c03000100000001020204",
+   "freq": 5180,
+   "name": "auth SAE from client",
+   "obs": [
+    {
+     "band": "5",
+     "bssid": null,
+     "frame": "auth",
+     "freq": 5180,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "rssi": -45,
+     "seq": 200,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -45,
+   "tuned": null
+  },
+  {
+   "frame": "c000000006aabbccddee021122334455021122334455800c0700",
+   "freq": 5180,
+   "name": "deauth from AP to client",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 36,
+     "freq": 5180,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -45,
+     "t": "wifi_ap",
+     "ts": 1700000000.0
+    },
+    {
+     "band": "5",
+     "bssid": "02:11:22:33:44:55",
+     "frame": "deauth",
+     "freq": 5180,
+     "from_ap": true,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "reason": 7,
+     "rssi": null,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -45,
+   "tuned": null
+  },
+  {
+   "frame": "c0000000ffffffffffff021122334455021122334455800c0300",
+   "freq": 5180,
+   "name": "deauth broadcast",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 36,
+     "freq": 5180,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -45,
+     "t": "wifi_ap",
+     "ts": 1700000000.0
+    },
+    {
+     "detail": "deauth to ff:ff:ff:ff:ff:ff reason 3",
+     "mac": "02:11:22:33:44:55",
+     "t": "event",
+     "ts": 1700000000.0,
+     "type": "deauth_broadcast"
+    }
+   ],
+   "rssi": -45,
+   "tuned": null
+  },
+  {
+   "frame": "a000000002112233445506aabbccddee021122334455800c0800",
+   "freq": 5180,
+   "name": "disassoc from client",
+   "obs": [
+    {
+     "band": "5",
+     "bssid": "02:11:22:33:44:55",
+     "frame": "disassoc",
+     "freq": 5180,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "reason": 8,
+     "rssi": -45,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -45,
+   "tuned": null
+  },
+  {
+   "frame": "c040000006aabbccddee021122334455021122334455800c0700",
+   "freq": 5180,
+   "name": "deauth protected (11w)",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 36,
+     "freq": 5180,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -45,
+     "t": "wifi_ap",
+     "ts": 1700000000.0
+    },
+    {
+     "band": "5",
+     "bssid": "02:11:22:33:44:55",
+     "frame": "deauth",
+     "freq": 5180,
+     "from_ap": true,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "reason": null,
+     "rssi": null,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -45,
+   "tuned": null
+  },
+  {
+   "frame": "0841000002112233445506aabbccddee021122334466c012aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "freq": 5180,
+   "name": "data to AP",
+   "obs": [
+    {
+     "band": "5",
+     "bssid": "02:11:22:33:44:55",
+     "frame": "data",
+     "freq": 5180,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "rssi": -48,
+     "seq": 300,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    },
+    {
+     "band": "5",
+     "channel": 36,
+     "freq": 5180,
+     "mac": "02:11:22:33:44:55",
+     "rssi": null,
+     "t": "wifi_ap",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -48,
+   "tuned": null
+  },
+  {
+   "frame": "8842000006aabbccddee021122334455021122334455c0120000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "freq": 5180,
+   "name": "qos data from AP",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 36,
+     "freq": 5180,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -49,
+     "t": "wifi_ap",
+     "ts": 1700000000.0
+    },
+    {
+     "band": "5",
+     "bssid": "02:11:22:33:44:55",
+     "frame": "data",
+     "freq": 5180,
+     "mac": "06:aa:bb:cc:dd:ee",
+     "rssi": null,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -49,
+   "tuned": null
+  },
+  {
+   "frame": "0842000001005e0000fb02112233445500163e123456c012aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "freq": 5180,
+   "name": "data multicast from AP",
+   "obs": [
+    {
+     "band": "5",
+     "channel": 36,
+     "freq": 5180,
+     "mac": "02:11:22:33:44:55",
+     "rssi": -49,
+     "t": "wifi_ap",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -49,
+   "tuned": null
+  },
+  {
+   "frame": "0843000002112233446602112233445506aabbccddeec012000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "freq": 5180,
+   "name": "data WDS",
+   "obs": [],
+   "rssi": -49,
+   "tuned": null
+  },
+  {
+   "frame": "4811000002112233445500163e1234560211223344555000",
+   "freq": 5180,
+   "name": "null data to AP",
+   "obs": [
+    {
+     "band": "5",
+     "bssid": "02:11:22:33:44:55",
+     "frame": "data",
+     "freq": 5180,
+     "mac": "00:16:3e:12:34:56",
+     "rssi": -49,
+     "t": "wifi_client",
+     "ts": 1700000000.0
+    },
+    {
+     "band": "5",
+     "channel": 36,
+     "freq": 5180,
+     "mac": "02:11:22:33:44:55",
+     "rssi": null,
+     "t": "wifi_ap",
+     "ts": 1700000000.0
+    }
+   ],
+   "rssi": -49,
+   "tuned": null
+  },
+  {
+   "frame": "d400000006aabbccddee",
+   "freq": 5180,
+   "name": "ack",
+   "obs": [],
+   "rssi": -49,
+   "tuned": null
+  },
+  {
+   "frame": "b400000002112233445506aabbccddee",
+   "freq": 5180,
+   "name": "rts",
+   "obs": [],
+   "rssi": -49,
+   "tuned": null
+  },
+  {
+   "frame": "d000000002112233445506aabbccddee021122334455800c0500",
+   "freq": 5180,
+   "name": "action frame",
+   "obs": [],
+   "rssi": -49,
+   "tuned": null
+  },
+  {
+   "frame": "80000000ffffffffffff0311223344550311223344554006081a99be1c000000640004310003426164010882848b960c121824030106",
+   "freq": 2437,
+   "name": "beacon from multicast address",
+   "obs": [],
+   "rssi": -50,
+   "tuned": null
+  }
+ ],
+ "meta": {
+  "sniffowireless": "1f8ef75",
+  "ts": 1700000000.0
+ }
+}

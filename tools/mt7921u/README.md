@@ -1,6 +1,6 @@
 # MT7921U userspace driver: PC prototype
 
-BanaanScan's own driver for MediaTek MT7921U Wi-Fi adapters (USB ID `0e8d:7961`, e.g. Alfa AWUS036AXML). It drives the
+sniffowireless-mobile's own driver for MediaTek MT7921U Wi-Fi adapters (USB ID `0e8d:7961`, e.g. Alfa AWUS036AXML). It drives the
 chip directly over USB, so on Android it won't need root. It's developed on a Linux PC first, checked against the Linux
 `mt7921u` driver.
 
@@ -60,6 +60,6 @@ power), open **Wi-Fi → USB adapter**, pick a band and tap **Listen**. Each ses
 app's private storage. To read them after reconnecting the phone:
 
 ```bash
-adb shell run-as io.github.banaanga.banaanscan.debug cat files/mt7921u/log.txt
-adb exec-out run-as io.github.banaanga.banaanscan.debug cat files/mt7921u/capture.pcap > mt7921u-trace/phone.pcap
+adb shell run-as io.github.banaanga.sniffowireless.mobile.debug cat files/mt7921u/log.txt
+adb exec-out run-as io.github.banaanga.sniffowireless.mobile.debug cat files/mt7921u/capture.pcap > mt7921u-trace/phone.pcap
 ```

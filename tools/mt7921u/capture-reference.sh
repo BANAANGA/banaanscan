@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Records the Linux mt7921u driver's USB traffic while it starts up and listens in monitor mode on a 2.4, a 5 and a
-# 6 GHz channel. The trace is the reference for BanaanScan's own userspace driver: what the chip expects, in what order.
+# 6 GHz channel. The trace is the reference for sniffowireless-mobile's own userspace driver: what the chip expects, in what order.
 #
 # What it changes, all undone on exit (also on Ctrl+C): it loads the usbmon module, stops NetworkManager managing the
 # adapter, restarts the adapter's driver and puts it in monitor mode. It only listens: nothing is transmitted.

@@ -7,7 +7,7 @@ ADB=${ADB:-adb}
 command -v "$ADB" >/dev/null || ADB="$HOME/Android/Sdk/platform-tools/adb"
 SERIAL=${1:-}
 a() { if [ -n "$SERIAL" ]; then "$ADB" -s "$SERIAL" "$@"; else "$ADB" "$@"; fi; }
-PKG=io.github.banaanga.banaanscan.debug   # debug builds only: run-as needs a debuggable app
+PKG=io.github.banaanga.sniffowireless.mobile.debug   # debug builds only: run-as needs a debuggable app
 SRC=${FIRMWARE_DIR:-/lib/firmware/mediatek}
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
@@ -20,4 +20,4 @@ for f in WIFI_MT7961_patch_mcu_1_2_hdr.bin WIFI_RAM_CODE_MT7961_1.bin; do
   a shell "run-as $PKG mkdir -p files/mt7921u && run-as $PKG cp /data/local/tmp/$f files/mt7921u/$f && rm /data/local/tmp/$f"
   echo "Copied $f ($(stat -c %s "$TMP/$f") bytes)"
 done
-echo "Done. In BanaanScan: Wi-Fi tab → USB adapter."
+echo "Done. In sniffowireless-mobile: Wi-Fi tab → USB adapter."

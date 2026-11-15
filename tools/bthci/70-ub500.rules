@@ -1,3 +1,3 @@
 # Lets the person logged in at this computer open the TP-Link UB500 / UB500 Plus (2357:0604, Realtek RTL8761BU) from
-# normal programs, for the BanaanScan Bluetooth prototype. Linux keeps using the adapter as usual otherwise.
+# normal programs, for the sniffowireless-mobile Bluetooth prototype. Linux keeps using the adapter as usual otherwise.
 SUBSYSTEM=="usb", ATTR{idVendor}=="2357", ATTR{idProduct}=="0604", TAG+="uaccess"
