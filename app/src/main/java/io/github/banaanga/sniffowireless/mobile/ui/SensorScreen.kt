@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -96,35 +97,30 @@ fun SensorScreen(vm: MainViewModel) {
     }
 
     Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
-        Card(Modifier.fillMaxWidth().padding(12.dp)) {
-            Column(Modifier.padding(12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val f = hub.forwarder
-                    @Suppress("UNUSED_EXPRESSION") tick
-                    val (color, label) = when {
-                        !running -> MaterialTheme.colorScheme.outline to "Off"
-                        f.lastError != null -> Sniffo.warn to "Retrying"
-                        f.lastSuccess == null -> Sniffo.warn to "Connecting"
-                        else -> Sniffo.good to "Sending"
-                    }
-                    Spacer(Modifier.size(10.dp).clip(CircleShape).background(color))
-                    Spacer(Modifier.width(8.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("Remote sensor · $label", fontWeight = FontWeight.Bold)
-                        Text(
-                            if (running) "Sending to ${s.serverUrl}" else "Send what this phone hears to a sniffowireless server, like one of its Raspberry Pi sensors.",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                    if (running) OutlinedButton(onClick = { SensorService.stop(context) }) { Text("Stop") }
-                    else Button(onClick = ::start, enabled = canStart && token.isNotBlank() && channelError == null) { Text("Start") }
+        Panel(title = "Remote sensor", action = {
+            if (running) Btn("Stop", { SensorService.stop(context) })
+            else Btn("Start", ::start, enabled = canStart && token.isNotBlank() && channelError == null)
+        }) {
+            Column {
+                val f0 = hub.forwarder
+                @Suppress("UNUSED_EXPRESSION") tick
+                val (tone, label) = when {
+                    !running -> Tone.NONE to "Off"
+                    f0.lastError != null -> Tone.WARN to "Retrying"
+                    f0.lastSuccess == null -> Tone.WARN to "Connecting"
+                    else -> Tone.ON to "Sending"
                 }
+                StatusLine(label, tone, Modifier)
+                Muted(
+                    if (running) "Sending to ${s.serverUrl}" else "Send what this phone hears to a sniffowireless server, like one of its Raspberry Pi sensors.",
+                    Modifier.padding(top = 2.dp),
+                )
                 if (running) {
                     val f = hub.forwarder
                     Text(
                         "%,d sent · %,d waiting · %,d dropped".format(f.sent, f.pending, f.dropped) +
                             (f.lastSuccess?.let { " · last upload ${ageText(it)}" } ?: ""),
-                        style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp),
+                        style = Mono, modifier = Modifier.padding(top = 8.dp),
                     )
                     f.lastError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
                     val reply = f.lastReply
@@ -135,7 +131,7 @@ fun SensorScreen(vm: MainViewModel) {
                         ).joinToString(" · "), style = MaterialTheme.typography.bodySmall)
                     }
                     if (reply != null && (reply["rejected"] as? Number)?.toInt()?.let { it > 0 } == true) {
-                        Text("The server rejected ${reply["rejected"]} observations in the last batch", color = Sniffo.warn, style = MaterialTheme.typography.bodySmall)
+                        Text("The server rejected ${reply["rejected"]} observations in the last batch", color = Sniffo.c.warn, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
@@ -143,10 +139,9 @@ fun SensorScreen(vm: MainViewModel) {
 
         SectionTitle("Server")
         Column(Modifier.padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("In sniffowireless: Settings → Sensors → Add remote sensor. Copy the docker command it shows (or just the token) and paste it here.",
-                style = MaterialTheme.typography.bodySmall)
+            Muted("In sniffowireless: Settings → Sensors → Add remote sensor. Copy the docker command it shows (or just the token) and paste it here.")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(enabled = !running, onClick = {
+                Btn("Paste from clipboard", enabled = !running, onClick = {
                     val clip = context.getSystemService(ClipboardManager::class.java)?.primaryClip
                     val text = clip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString().orEmpty()
                     val (u, t) = SensorSettings.parsePaste(text)
@@ -158,15 +153,15 @@ fun SensorScreen(vm: MainViewModel) {
                         u != null -> "Server address filled in; the token is missing"
                         else -> "The clipboard has no server address or sniffowireless token"
                     }
-                }) { Text("Paste from clipboard") }
+                })
             }
-            pasteNote?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-            OutlinedTextField(url, { url = it.trim() }, Modifier.fillMaxWidth(), enabled = !running, singleLine = true,
-                label = { Text("Server address") }, placeholder = { Text("http://192.168.1.10:8080") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                isError = url.isNotEmpty() && !canStart, supportingText = { if (url.isNotEmpty() && !canStart) Text("Starts with http:// or https://") })
-            OutlinedTextField(token, { token = it.trim() }, Modifier.fillMaxWidth(), enabled = !running, singleLine = true,
-                label = { Text("Sensor token") }, visualTransformation = PasswordVisualTransformation())
+            pasteNote?.let { StatusLine(it, modifier = Modifier) }
+            FieldLabel("Server address")
+            Field(url, { url = it.trim() }, "http://192.168.1.10:8080", enabled = !running, mono = true,
+                error = url.isNotEmpty() && !canStart, keyboard = KeyboardOptions(keyboardType = KeyboardType.Uri))
+            if (url.isNotEmpty() && !canStart) Text("Starts with http:// or https://", style = MaterialTheme.typography.bodySmall, color = Sniffo.c.bad)
+            FieldLabel("Sensor token")
+            Field(token, { token = it.trim() }, "sniffowireless_…", enabled = !running, mono = true, visual = PasswordVisualTransformation())
         }
 
         SectionTitle("What to send")
@@ -176,9 +171,11 @@ fun SensorScreen(vm: MainViewModel) {
             SourceRow("USB Wi-Fi adapter (MT7921U)",
                 if (usbWifi != null) "Connected: monitor mode, access points and clients on 2.4, 5 and 6 GHz." else "Not connected.", usbWifiOn, !running) { usbWifiOn = it; s.usbWifi = it }
             if (usbWifiOn) {
-                OutlinedTextField(channels, { channels = it }, Modifier.fillMaxWidth().padding(bottom = 4.dp), enabled = !running, singleLine = true,
-                    label = { Text("Channels when the server sets none") }, isError = channelError != null,
-                    supportingText = { Text(channelError ?: "As in sniffowireless: default, all, 6ghz, 1,6,11, 36-48, 6g:37 … The server's Settings → Wi-Fi channels wins.") })
+                FieldLabel("Channels when the server sets none")
+                Field(channels, { channels = it }, "default,6ghz", enabled = !running, mono = true, error = channelError != null)
+                Text(channelError ?: "As in sniffowireless: default, all, 6ghz, 1,6,11, 36-48, 6g:37 … The server's Settings → Wi-Fi channels wins.",
+                    style = MaterialTheme.typography.bodySmall, color = if (channelError != null) Sniffo.c.bad else Sniffo.c.muted,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 6.dp))
             }
             SourceRow("USB Bluetooth adapter",
                 if (usbBt != null) "Connected: ${usbBt!!.label}. Every advert, long range too." else "Not connected.", usbBtOn, !running) { usbBtOn = it; s.usbBt = it }
@@ -188,8 +185,7 @@ fun SensorScreen(vm: MainViewModel) {
             val stick = dongles.firstOrNull { it.device != null }
             SourceRow("Zigbee stick", stick?.let { "Connected: ${it.name}. Scans every 10 minutes and listens in between, as the server's Settings → Zigbee says." } ?: "Not connected.",
                 zigbeeOn, !running) { zigbeeOn = it; s.zigbee = it }
-            Text("Plug adapters in before pressing Start. The server's Sensors page shows each one with its state.", style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 4.dp))
+            Muted("Plug adapters in before pressing Start. The server's Sensors page shows each one with its state.", Modifier.padding(top = 4.dp))
         }
 
         if (running) {
@@ -198,19 +194,17 @@ fun SensorScreen(vm: MainViewModel) {
             Column(Modifier.padding(horizontal = 12.dp)) {
                 hub.status.snapshot().forEach { e ->
                     val state = e["state"]?.toString() ?: "?"
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
-                        Spacer(Modifier.size(8.dp).clip(CircleShape).background(
-                            when { e["error"] != null -> Sniffo.bad; e["warning"] != null -> Sniffo.warn; else -> Sniffo.good }))
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 3.dp)) {
+                        Dot(when { e["error"] != null -> Sniffo.c.bad; e["warning"] != null -> Sniffo.c.warn; else -> Sniffo.c.good }, 8)
                         Spacer(Modifier.width(8.dp))
                         Column {
-                            Text("${e["name"]} · $state" + (e["channel"]?.let { " · ch $it" } ?: ""), style = MaterialTheme.typography.bodyMedium)
-                            Text(listOfNotNull(e["packets"]?.let { "$it packets" }, e["pps"]?.let { "$it/s" },
-                                (e["error"] ?: e["warning"])?.toString()).joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+                            Text("${e["name"]} · $state" + (e["channel"]?.let { " · ch $it" } ?: ""), style = Mono)
+                            Muted(listOfNotNull(e["packets"]?.let { "$it packets" }, e["pps"]?.let { "$it/s" },
+                                (e["error"] ?: e["warning"])?.toString()).joinToString(" · "))
                         }
                     }
                 }
-                if (hub.status.snapshot().isEmpty()) Text("No sources running: plug in an adapter or turn on a phone source, then restart sensor mode.",
-                    style = MaterialTheme.typography.bodySmall)
+                if (hub.status.snapshot().isEmpty()) Muted("No sources running: plug in an adapter or turn on a phone source, then restart sensor mode.")
             }
         }
 
@@ -218,25 +212,23 @@ fun SensorScreen(vm: MainViewModel) {
         Column(Modifier.padding(horizontal = 12.dp)) {
             val pm = context.getSystemService(PowerManager::class.java)
             val exempt = pm?.isIgnoringBatteryOptimizations(context.packageName) == true
-            Text(if (exempt) "Battery optimisation is off for this app: Android won't pause sensor mode." else
+            StatusLine(if (exempt) "Battery optimisation is off for this app: Android won't pause sensor mode." else
                 "Android may pause the app to save battery. For a sensor that runs for days, turn battery optimisation off for it.",
-                style = MaterialTheme.typography.bodySmall)
-            if (!exempt) TextButton(onClick = { runCatching { context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) } }) {
-                Text("Battery settings")
-            }
+                if (exempt) Tone.ON else Tone.WARN, Modifier)
+            if (!exempt) Btn("Battery settings", { runCatching { context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) } },
+                Modifier.padding(top = 8.dp))
         }
 
         SectionTitle("Log")
         @Suppress("UNUSED_EXPRESSION") tick
         Column(Modifier.padding(horizontal = 12.dp)) {
             val lines = hub.logs.recent(40)
-            if (lines.isEmpty()) Text("Nothing yet.", style = MaterialTheme.typography.bodySmall)
+            if (lines.isEmpty()) Muted("Nothing yet.")
             lines.asReversed().forEach { l ->
-                Text("${l["level"]} ${l["msg"]}", style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace,
-                    color = if (l["level"] == "WARNING" || l["level"] == "ERROR") Sniffo.warn else Color.Unspecified)
+                Text("${l["level"]} ${l["msg"]}", style = Mono,
+                    color = if (l["level"] == "WARNING" || l["level"] == "ERROR") Sniffo.c.warn else Sniffo.c.muted)
             }
         }
-        HorizontalDivider(Modifier.padding(top = 12.dp))
     }
 }
 
@@ -245,8 +237,13 @@ private fun SourceRow(title: String, detail: String, checked: Boolean, enabled: 
     Row(Modifier.fillMaxWidth().padding(start = if (indent) 16.dp else 0.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyMedium)
-            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Muted(detail)
         }
-        Switch(checked, onChange, enabled = enabled)
+        Switch(checked, onChange, enabled = enabled, colors = SwitchDefaults.colors(checkedTrackColor = Sniffo.c.good, checkedThumbColor = Sniffo.c.bg))
     }
+}
+
+@Composable
+private fun FieldLabel(text: String) {
+    Text(text, style = MaterialTheme.typography.labelMedium, color = Sniffo.c.muted, modifier = Modifier.padding(top = 4.dp))
 }

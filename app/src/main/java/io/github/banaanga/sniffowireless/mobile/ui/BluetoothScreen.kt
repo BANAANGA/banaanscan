@@ -4,34 +4,14 @@ import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -40,15 +20,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.banaanga.sniffowireless.mobile.MainViewModel
 import io.github.banaanga.sniffowireless.mobile.classify.DeviceClassifier
 import io.github.banaanga.sniffowireless.mobile.data.BtDevice
+import io.github.banaanga.sniffowireless.mobile.data.DeviceType
 
 @Composable
 fun BluetoothScreen(vm: MainViewModel) {
     var usbAdapter by rememberSaveable { mutableStateOf(false) }
     Column {
-        Row(Modifier.padding(start = 12.dp, bottom = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            FilterChip(selected = !usbAdapter, onClick = { usbAdapter = false }, label = { Text("Phone") })
-            FilterChip(selected = usbAdapter, onClick = { usbAdapter = true }, label = { Text("USB adapter") })
-        }
+        SourceSeg(usbAdapter) { usbAdapter = it }
         if (usbAdapter) UsbBluetooth(vm) else PhoneBluetooth(vm)
     }
 }
@@ -68,28 +46,24 @@ private fun PhoneBluetooth(vm: MainViewModel) {
     // Scanning drains the battery; stop when the user leaves this tab.
     DisposableEffect(Unit) { onDispose { vm.bt.stop() } }
 
-    Column {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically,
+    BtList(devices, namedOnly, summary = null) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { if (scanning) vm.bt.stop() else vm.bt.start() }) {
-                Text(if (scanning) "Stop" else "Scan")
-            }
-            FilterChip(selected = namedOnly, onClick = { namedOnly = !namedOnly }, label = { Text("Named only") })
-            TextButton(onClick = { vm.bt.clear() }) { Text("Clear") }
+            Btn(if (scanning) "Stop" else "Scan", { if (scanning) vm.bt.stop() else vm.bt.start() })
+            Btn("Clear", { vm.bt.clear() })
+            Spacer(Modifier.weight(1f))
+            Check("Named only", namedOnly, { namedOnly = it })
         }
-        if (scanning) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 4.dp))
+        if (scanning) StatusLine("Scanning", Tone.ON, Modifier.padding(horizontal = 16.dp, vertical = 6.dp))
         if (!vm.bt.isAvailable) {
-            Text("This device has no Bluetooth.", Modifier.padding(12.dp), color = MaterialTheme.colorScheme.error)
+            StatusLine("This device has no Bluetooth.", Tone.BAD, Modifier.padding(horizontal = 16.dp, vertical = 6.dp))
         } else if (!enabled) {
-            Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Bluetooth is off.", Modifier.weight(1f), color = MaterialTheme.colorScheme.error)
-                TextButton(onClick = {
-                    runCatching { enableLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)) }
-                }) { Text("Turn on") }
+            Row(Modifier.padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                StatusLine("Bluetooth is off.", Tone.BAD, Modifier.weight(1f))
+                Btn("Turn on", { runCatching { enableLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)) } })
             }
         }
-        error?.let { Text(it, Modifier.padding(horizontal = 12.dp), color = MaterialTheme.colorScheme.error) }
-        BtList(devices, namedOnly, summary = null)
+        error?.let { StatusLine(it, Tone.BAD, Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) }
     }
 }
 
@@ -109,54 +83,56 @@ private fun UsbBluetooth(vm: MainViewModel) {
     LaunchedEffect(Unit) { usb.refresh() }
     DisposableEffect(Unit) { onDispose { vm.stopBtUsb() } }
 
-    Column {
-        Card(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
-            Column(Modifier.padding(12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(adapter?.let { "${it.label} connected" } ?: "Plug in a USB Bluetooth adapter", fontWeight = FontWeight.Bold)
-                        Text(
-                            when {
-                                adapter == null -> "Connect it with a USB-C cable or OTG adapter. sniffowireless-mobile drives it itself, without root; the phone's own Bluetooth isn't used."
-                                passive -> "Listen only: nothing is transmitted, so names only appear when devices advertise them."
-                                else -> "Asks devices for their names (from a random address) and searches for classic devices too."
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                    when {
-                        running -> OutlinedButton(onClick = vm::stopBtUsb) { Text("Stop") }
-                        adapter != null -> Button(onClick = { vm.startBtUsb(passive) }) { Text("Scan") }
-                    }
+    BtList(devices, namedOnly, summary = if (packets > 0) "%,d packets".format(packets) else null) {
+        Panel(
+            title = "Adapter",
+            action = {
+                when {
+                    running -> Btn("Stop", vm::stopBtUsb)
+                    adapter != null -> Btn("Scan", { vm.startBtUsb(passive) })
                 }
-                Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    FilterChip(selected = passive, enabled = !running, onClick = { passive = !passive }, label = { Text("Listen only") })
-                    FilterChip(selected = namedOnly, onClick = { namedOnly = !namedOnly }, label = { Text("Named only") })
-                    TextButton(onClick = usb::clear, enabled = !running) { Text("Clear") }
-                }
+            },
+        ) {
+            StatusLine(adapter?.let { "${it.label} connected" } ?: "No adapter plugged in", if (adapter != null) Tone.ON else Tone.NONE,
+                Modifier)
+            Muted(
+                when {
+                    adapter == null -> "Connect a USB Bluetooth adapter with a USB-C cable or OTG adapter. sniffowireless-mobile drives it itself, without root; the phone's own Bluetooth isn't used."
+                    passive -> "Listen only: nothing is transmitted, so names only appear when devices advertise them."
+                    else -> "Asks devices for their names (from a random address) and searches for classic devices too."
+                },
+                Modifier.padding(top = 4.dp),
+            )
+            Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Check("Listen only", passive, { passive = it }, enabled = !running)
+                Spacer(Modifier.width(16.dp))
+                Check("Named only", namedOnly, { namedOnly = it })
+                Spacer(Modifier.weight(1f))
+                Btn("Clear", usb::clear, enabled = !running)
             }
         }
-        if (running) LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 12.dp))
-        status?.let { Text(it, Modifier.padding(horizontal = 12.dp), style = MaterialTheme.typography.bodySmall) }
-        error?.let { Text(it, Modifier.padding(horizontal = 12.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
-        BtList(devices, namedOnly, summary = if (packets > 0) "%,d packets".format(packets) else null)
+        if (running) LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), color = Sniffo.c.ble, trackColor = Sniffo.c.panel2)
+        status?.let { StatusLine(it, if (running) Tone.ON else Tone.NONE) }
+        error?.let { StatusLine(it, Tone.BAD) }
     }
 }
 
 @Composable
-private fun BtList(devices: Map<String, BtDevice>, namedOnly: Boolean, summary: String?) {
+private fun BtList(devices: Map<String, BtDevice>, namedOnly: Boolean, summary: String?, header: @Composable ColumnScope.() -> Unit) {
     var selected by remember { mutableStateOf<BtDevice?>(null) }
     val shown = devices.values
         .filter { !namedOnly || it.name != null }
         .sortedByDescending { it.rssi ?: -200 }
 
-    Column {
-        Text(listOfNotNull("${shown.size} devices", summary).joinToString(" · "),
-            Modifier.padding(horizontal = 12.dp, vertical = 4.dp), style = MaterialTheme.typography.labelLarge)
-        HorizontalDivider()
-        LazyColumn {
-            items(shown, key = { it.address }) { d -> BtRow(d) { selected = d } }
+    LazyColumn {
+        item(key = "header") {
+            Column {
+                header()
+                Spacer(Modifier.height(6.dp))
+                ListHead(listOfNotNull("${shown.size} device" + (if (shown.size == 1) "" else "s"), summary).joinToString(" · "), "Signal")
+            }
         }
+        items(shown, key = { it.address }) { d -> BtRow(d) { selected = d } }
     }
 
     selected?.let { sel ->
@@ -173,14 +149,14 @@ private fun BtList(devices: Map<String, BtDevice>, namedOnly: Boolean, summary: 
             InfoRow("Connectable", d.connectable?.toString())
             InfoRow("Class", d.deviceClass?.let { "0x%04X (major 0x%04X)".format(it, d.majorClass ?: 0) })
             if (d.manufacturerData.isNotEmpty()) {
-                SectionTitle("Manufacturer data")
+                H2("Manufacturer data", Modifier.padding(top = 10.dp, bottom = 2.dp))
                 d.manufacturerData.forEach { (id, hex) ->
                     InfoRow(DeviceClassifier.BLE_COMPANIES[id] ?: "0x%04X".format(id), hex.take(48))
                 }
             }
             if (d.serviceUuids.isNotEmpty()) {
-                SectionTitle("Services")
-                d.serviceUuids.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                H2("Services", Modifier.padding(top = 10.dp, bottom = 2.dp))
+                d.serviceUuids.forEach { Text(it, style = Mono) }
             }
             GuessSection(d.guess)
             InfoRow("Last seen", ageText(d.lastSeen))
@@ -196,24 +172,30 @@ private fun vendorText(d: BtDevice): String = when {
     else -> d.vendor ?: "Unknown"
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun BtRow(d: BtDevice, onClick: () -> Unit) {
-    ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
-        leadingContent = { Icon(d.guess.type.icon(), contentDescription = d.guess.type.label) },
-        headlineContent = { Text(d.name ?: "Unnamed device") },
-        supportingContent = {
-            Column {
-                Text("${d.address} · ${vendorText(d)}", style = MaterialTheme.typography.bodySmall)
-                FlowRow {
-                    Tag(d.guess.short())
-                    if (d.le) Tag("BLE")
-                    if (d.classic) Tag("Classic")
-                    if ("Coded" in d.phys) Tag("Long range")
-                    if (d.bonded) Tag("Paired")
-                }
-            }
+    val p = Sniffo.c
+    val classicOnly = d.classic && !d.le
+    DeviceRow(
+        title = d.name ?: "—",
+        strong = d.name != null,
+        kindColor = if (classicOnly) p.btClassic else p.ble,
+        kind = when {
+            d.le && d.classic -> "BLE + classic"
+            classicOnly -> "Bluetooth classic"
+            else -> "BLE"
         },
-        trailingContent = { RssiText(d.rssi) },
+        address = d.address,
+        identified = listOfNotNull(vendorText(d), d.guess.short().takeIf { d.guess.type != DeviceType.UNKNOWN }).joinToString(" · "),
+        onClick = onClick,
+        trailing = { RssiText(d.rssi) },
+        tags = if ("Coded" in d.phys || d.bonded || d.randomAddress) {
+            {
+                if ("Coded" in d.phys) Tag("long range")
+                if (d.bonded) Tag("paired", Tone.ON)
+                if (d.randomAddress) Tag("rand", Tone.WARN)
+            }
+        } else null,
     )
 }

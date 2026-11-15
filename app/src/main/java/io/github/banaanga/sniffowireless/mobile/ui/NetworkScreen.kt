@@ -1,38 +1,24 @@
 package io.github.banaanga.sniffowireless.mobile.ui
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.banaanga.sniffowireless.mobile.MainViewModel
+import io.github.banaanga.sniffowireless.mobile.data.DeviceType
 import io.github.banaanga.sniffowireless.mobile.data.LanDevice
 import io.github.banaanga.sniffowireless.mobile.scan.LocalNetwork
 import io.github.banaanga.sniffowireless.mobile.scan.Probes
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NetworkScreen(vm: MainViewModel) {
     val net by vm.lan.network.collectAsStateWithLifecycle()
@@ -48,20 +34,18 @@ fun NetworkScreen(vm: MainViewModel) {
     LazyColumn {
         item(key = "header") {
             Column {
-                NetworkCard(net)
-                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(status, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-                    if (running) OutlinedButton(onClick = vm::stopLan) { Text("Stop") }
-                    else Button(onClick = vm::scanLan) { Text("Scan") }
-                }
-                if (running) LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
+                NetworkCard(net) { if (running) Btn("Stop", vm::stopLan) else Btn("Scan", vm::scanLan) }
+                if (running) LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                    color = Sniffo.c.lan, trackColor = Sniffo.c.panel2, drawStopIndicator = {})
+                StatusLine(status, if (running) Tone.ON else Tone.NONE)
                 if (devices.isNotEmpty()) {
-                    FlowRow(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                    FlowRow(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
                         devices.groupingBy { it.guess.type }.eachCount().entries.sortedByDescending { it.value }
                             .forEach { (type, n) -> Tag("${type.label}: $n") }
                     }
                 }
-                HorizontalDivider()
+                Spacer(Modifier.height(6.dp))
+                ListHead("${devices.size} hosts", "Ports")
             }
         }
         items(devices, key = { it.ip }) { d -> LanRow(d) { selectedIp = d.ip } }
@@ -73,45 +57,40 @@ fun NetworkScreen(vm: MainViewModel) {
 }
 
 @Composable
-private fun NetworkCard(net: LocalNetwork?) {
-    Card(Modifier.fillMaxWidth().padding(12.dp)) {
-        Column(Modifier.padding(12.dp)) {
-            if (net == null) {
-                Text("Not connected to Wi-Fi or Ethernet", fontWeight = FontWeight.Bold)
-                return@Column
-            }
-            Text(net.ssid ?: net.transport, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-            InfoRow("This device", "${net.ip}/${net.prefix}")
-            InfoRow("Subnet", net.cidr)
-            InfoRow("Gateway", net.gateway)
-            InfoRow("DNS", net.dns.joinToString(", "))
-            InfoRow("AP BSSID", net.bssid)
+private fun NetworkCard(net: LocalNetwork?, action: @Composable RowScope.() -> Unit) {
+    Panel(title = net?.let { it.ssid ?: it.transport } ?: "Network", action = action) {
+        if (net == null) {
+            StatusLine("Not connected to Wi-Fi or Ethernet", Tone.BAD, Modifier)
+            return@Panel
         }
+        InfoRow("This device", "${net.ip}/${net.prefix}")
+        InfoRow("Subnet", net.cidr)
+        InfoRow("Gateway", net.gateway)
+        InfoRow("DNS", net.dns.joinToString(", "))
+        InfoRow("AP BSSID", net.bssid)
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun LanRow(d: LanDevice, onClick: () -> Unit) {
-    ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
-        leadingContent = { Icon(d.guess.type.icon(), contentDescription = d.guess.type.label) },
-        headlineContent = { Text(d.displayName, fontWeight = if (d.isSelf || d.isGateway) FontWeight.Bold else FontWeight.Normal) },
-        supportingContent = {
-            Column {
-                Text(
-                    listOfNotNull(d.ip, d.mac, d.vendor).joinToString(" · "),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                FlowRow {
-                    Tag(d.guess.short())
-                    if (d.isSelf) Tag("You")
-                    if (d.isGateway) Tag("Gateway")
-                    if (d.openPorts.isNotEmpty()) Tag("${d.openPorts.size} open port" + if (d.openPorts.size == 1) "" else "s")
-                    if (d.mdnsServices.isNotEmpty()) Tag("mDNS")
-                    if (d.ssdp != null) Tag("UPnP")
-                }
+    DeviceRow(
+        title = d.displayName,
+        strong = d.displayName != d.ip,
+        kindColor = Sniffo.c.lan,
+        kind = "LAN",
+        address = d.ip,
+        identified = listOfNotNull(d.mac, d.vendor, d.guess.short().takeIf { d.guess.type != DeviceType.UNKNOWN }).joinToString(" · "),
+        onClick = onClick,
+        trailing = { if (d.openPorts.isNotEmpty()) Text("${d.openPorts.size}", style = Mono, color = Sniffo.c.muted) },
+        tags = if (d.isSelf || d.isGateway || d.mdnsServices.isNotEmpty() || d.ssdp != null) {
+            {
+                if (d.isSelf) Tag("this phone", Tone.ON)
+                if (d.isGateway) Tag("gateway")
+                if (d.mdnsServices.isNotEmpty()) Tag("mDNS")
+                if (d.ssdp != null) Tag("UPnP")
             }
-        },
+        } else null,
     )
 }
 
@@ -126,19 +105,19 @@ private fun LanDetail(d: LanDevice, onDismiss: () -> Unit) {
         InfoRow("NetBIOS", listOfNotNull(d.netbiosName, d.netbiosGroup?.let { "workgroup $it" }).joinToString(" · "))
         InfoRow("mDNS names", (d.mdnsNames + d.mdnsHosts).joinToString(", "))
         if (d.openPorts.isNotEmpty()) {
-            SectionTitle("Open ports")
+            DetailTitle("Open ports")
             d.openPorts.sorted().forEach { InfoRow(it.toString(), Probes.COMMON_PORTS[it] ?: "") }
         }
         if (d.mdnsServices.isNotEmpty()) {
-            SectionTitle("mDNS services")
+            DetailTitle("mDNS services")
             d.mdnsServices.sorted().forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
         if (d.mdnsTxt.isNotEmpty()) {
-            SectionTitle("mDNS TXT")
+            DetailTitle("mDNS TXT")
             d.mdnsTxt.forEach { (k, v) -> InfoRow(k, v) }
         }
         d.ssdp?.let { u ->
-            SectionTitle("UPnP")
+            DetailTitle("UPnP")
             InfoRow("Name", u.friendlyName)
             InfoRow("Maker", u.manufacturer)
             InfoRow("Model", u.modelName)
@@ -146,7 +125,7 @@ private fun LanDetail(d: LanDevice, onDismiss: () -> Unit) {
             InfoRow("Server", u.server)
         }
         if (d.httpServer != null || d.httpTitle != null) {
-            SectionTitle("Web interface")
+            DetailTitle("Web interface")
             InfoRow("Server", d.httpServer)
             InfoRow("Title", d.httpTitle)
         }

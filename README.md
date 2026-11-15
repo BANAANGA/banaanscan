@@ -1,5 +1,16 @@
 # sniffowireless-mobile
 
+<p>
+  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/BANAANGA/sniffowireless-mobile"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" height="60" alt="Get it on Obtainium"></a>
+</p>
+
+**Part of [sniffowireless](https://github.com/BANAANGA/sniffowireless)** · server, web interface and Raspberry Pi
+sensors: [github.com/BANAANGA/sniffowireless](https://github.com/BANAANGA/sniffowireless)
+
+The button opens Obtainium on your phone and adds this app, so it installs and updates from the
+[GitHub releases](https://github.com/BANAANGA/sniffowireless-mobile/releases). Without Obtainium, download the APK from
+the [latest release](https://github.com/BANAANGA/sniffowireless-mobile/releases/latest).
+
 The Android companion of [sniffowireless](https://github.com/BANAANGA/sniffowireless): it captures Wi-Fi, Bluetooth
 and Zigbee the way a sniffowireless sensor does, and can run as a **remote sensor** that sends everything to your
 sniffowireless server, where it shows up on the map, in the device history and in the alerts like any Raspberry Pi
@@ -7,12 +18,13 @@ sensor.
 
 On its own it is also a scanner (Kotlin + Jetpack Compose): Wi-Fi and Bluetooth, Wi-Fi monitor mode and full
 Bluetooth scanning through USB adapters, Zigbee networks and IEEE 802.15.4 traffic through a USB stick, devices on the
-local network, MAC vendors, device-type guesses, and an index of everything it has seen.
+local network, MAC vendors, device-type guesses, and a list of every device it has seen. It looks like the
+sniffowireless web interface: the same colours, panels, device-type colours and lists.
 
 ## Sensor for sniffowireless
 
 1. On the server: **Settings → Sensors → Add remote sensor**, with a name and room. Copy the command it shows.
-2. In the app: tap the **sensor icon** in the top bar, then **Paste from clipboard**: the server address and token
+2. In the app: open the **Sensor** page, then tap **Paste from clipboard**: the server address and token
    are taken from the command. Choose what to send and press **Start**.
 
 The phone then works like one of sniffowireless's remote sensors:
@@ -41,44 +53,44 @@ that runs for days, turn battery optimisation off for the app (the Sensor screen
 
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/network.png" width="200" alt="Network tab with discovered devices"><br><sub>Network discovery</sub></td>
-    <td align="center"><img src="docs/screenshots/detail.png" width="200" alt="Device detail with type guess and reasons"><br><sub>Device detail + type guess</sub></td>
-    <td align="center"><img src="docs/screenshots/wifi.png" width="200" alt="Wi-Fi access point list"><br><sub>Wi-Fi scanner</sub></td>
+    <td align="center"><img src="docs/screenshots/wifi.png" width="200" alt="Wi-Fi page with an access point list"><br><sub>Wi-Fi</sub></td>
+    <td align="center"><img src="docs/screenshots/detail.png" width="200" alt="Access point details with what it was identified as"><br><sub>Details + identification</sub></td>
+    <td align="center"><img src="docs/screenshots/network.png" width="200" alt="LAN page with discovered hosts"><br><sub>LAN</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/index.png" width="200" alt="Index of every device seen"><br><sub>Device index</sub></td>
-    <td align="center"><img src="docs/screenshots/lookup.png" width="200" alt="MAC vendor lookup"><br><sub>MAC vendor lookup</sub></td>
-    <td align="center"><img src="docs/screenshots/zigbee.png" width="200" alt="Zigbee tab showing channel interference and networks from a simulated dongle"><br><sub>Zigbee scanner (simulated dongle)</sub></td>
+    <td align="center"><img src="docs/screenshots/index.png" width="200" alt="Devices page listing every device seen"><br><sub>Devices</sub></td>
+    <td align="center"><img src="docs/screenshots/zigbee.png" width="200" alt="Zigbee page with channel interference from a simulated stick"><br><sub>Zigbee (simulated stick)</sub></td>
+    <td align="center"><img src="docs/screenshots/sniffer.png" width="200" alt="802.15.4 sniffer with frames per channel and heard radios from a simulated stick"><br><sub>802.15.4 sniffer (simulated stick)</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/sniffer.png" width="200" alt="802.15.4 sniffer showing frames per channel and heard radios from a simulated dongle"><br><sub>802.15.4 sniffer (simulated dongle)</sub></td>
+    <td align="center"><img src="docs/screenshots/sensor.png" width="200" alt="Sensor page for sending to a sniffowireless server"><br><sub>Sensor mode</sub></td>
     <td></td>
     <td></td>
   </tr>
 </table>
 
-<sub>Captured on the Android emulator before the rename, with the old colours. The emulator's virtual network only has
+<sub>Captured on the Android emulator. The emulator's virtual network only has
 a gateway, a DNS server and the emulator itself. On a real home network you'll see phones, TVs, printers, smart plugs and so on. The
 Zigbee and sniffer results are made up by the simulated dongle in debug builds.</sub>
 
 ## Features
 
-| Tab | What it does |
+| Page | What it does |
 |---|---|
 | **Wi-Fi** | Lists access points: SSID, BSSID + vendor, signal, band/channel/width, Wi-Fi standard, security, channel usage. Flags hotspots / Wi-Fi Direct printers & TVs. |
 | **Bluetooth** | BLE scan + classic discovery merged per address. Decodes BLE manufacturer data (Apple Continuity, Microsoft, Samsung, Garmin…), service UUIDs and the Bluetooth device class. With a USB Bluetooth adapter: every advertising packet, long range (Coded PHY), and a listen-only mode. |
 | **Zigbee** | Active scan through a USB coordinator: PAN ID, extended PAN ID, channel, signal, whether the network is open for joining, and which routers answered. Silicon Labs sticks also measure interference per channel, and can passively sniff all 802.15.4 traffic: frames per channel, addresses, frame types and a protocol hint. |
-| **Network** | Subnet sweep (TCP connect + ICMP), then per host: 33 common ports, reverse DNS, NetBIOS name/MAC, mDNS/DNS-SD services + TXT (Apple model IDs, Cast models, printers), SSDP/UPnP description, web page title/Server header. |
-| **Index** | Persistent JSON index of every LAN/BT/Wi-Fi device with first/last seen and sighting count. Search, filter, export CSV. |
-| **Lookup** | Manual MAC/OUI lookup (MA-L/MA-M/MA-S), randomized-MAC detection, and updating the vendor database. |
+| **LAN** | Subnet sweep (TCP connect + ICMP), then per host: 33 common ports, reverse DNS, NetBIOS name/MAC, mDNS/DNS-SD services + TXT (Apple model IDs, Cast models, printers), SSDP/UPnP description, web page title/Server header. |
+| **Devices** | Every LAN, Bluetooth, Wi-Fi and Zigbee device seen, with first/last seen and sighting count, kept on the phone. Search, filter by type, hide randomized MACs, export CSV, and update the vendor database. |
+| **Sensor** | Sends what the phone and its USB adapters hear to a sniffowireless server (see [Sensor for sniffowireless](#sensor-for-sniffowireless)). |
 
-The app starts in dark mode. The button in the top bar cycles Dark → Light → Follow system, and the
-choice is remembered.
+The pages are in a row under the title, like the sniffowireless web interface on a narrow screen. The app starts in
+dark mode; the button in the top bar cycles Dark → Light → Follow system, and the choice is remembered.
 
 ### USB adapters
 
 sniffowireless-mobile can drive two kinds of USB adapter itself, without root, through a USB-C cable or OTG adapter. Choose
-**USB adapter** at the top of the Wi-Fi or Bluetooth tab.
+**USB adapter** at the top of the Wi-Fi or Bluetooth page.
 
 * **Wi-Fi monitor mode** with a MediaTek MT7921U adapter (USB ID `0e8d:7961`): listens on 2.4, 5 and 6 GHz
   and lists networks and the devices talking in them, including probe requests. Nothing is transmitted. A capture
@@ -105,7 +117,7 @@ a shaky label. Tap any device to see the reasons behind its guess.
 
 ### Zigbee
 
-Phones have no Zigbee radio, so this tab needs a coordinator stick connected through a USB-OTG adapter.
+Phones have no Zigbee radio, so this page needs a coordinator stick connected through a USB-OTG adapter.
 sniffowireless-mobile works out the firmware by asking the stick, since the USB chip doesn't reveal it.
 
 | Firmware | Example sticks | Networks | Channel interference | Sniffer |
@@ -126,7 +138,7 @@ sniffowireless-mobile works out the firmware by asking the stick, since the USB 
 
 ### 802.15.4 sniffer
 
-The **Sniffer** mode on the Zigbee tab hears other 802.15.4 systems too, not just Zigbee. It uses the firmware's
+The **Sniffer** mode on the Zigbee page hears other 802.15.4 systems too, not just Zigbee. It uses the firmware's
 manufacturing test library (`mfglib`) in receive-only mode, so no reflashing is needed if the firmware includes it;
 if not, the app says so. It never transmits, and the stick restarts when you press Stop.
 
@@ -144,7 +156,7 @@ Only use it on systems you own or are authorised to test.
 ### Vendor database
 
 On first launch the app downloads Wireshark's `manuf` file (IEEE OUI registries, ~58,000 prefixes) into
-private storage. **Lookup → Update now** refreshes it. To work fully offline, put that file at
+private storage. **Devices → Vendor database → Update** refreshes it. To work fully offline, put that file at
 `app/src/main/assets/manuf` before building.
 
 ## Android limitations (worth knowing)
@@ -231,7 +243,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 ## Testing status
 
-Tested on the Android 15 emulator (Pixel 6 profile): all tabs, LAN scan, MAC lookup, index persistence,
+Tested on the Android 15 emulator (Pixel 6 profile): all pages, LAN scan, device list persistence,
 rotation and the theme toggle. On a Galaxy S10 (Android 12): the app itself, Wi-Fi monitor mode through an MT7921U
 and Bluetooth through a TP-Link UB500 Plus (see the [USB adapters](#usb-adapters) section).
 
@@ -259,7 +271,7 @@ app/src/main/java/io/github/banaanga/sniffowireless/mobile/
 ├── sensor/     sensor mode: the shared Hub, SensorService (foreground service), settings
 ├── classify/   DeviceClassifier (type-guessing rules)
 ├── data/       models, OuiDatabase (MAC vendors), DeviceIndex (saved devices)
-└── ui/         one screen per tab + shared components
+└── ui/         one screen per page + shared sniffowireless-style components (Common.kt)
 mt7921u/        MT7921U driver (plain Kotlin), mt7921u-pc/ its PC prototype
 bthci/          Bluetooth HCI over USB + Realtek firmware loader (plain Kotlin), bthci-pc/ its PC prototype
 sniffo-core/    sniffowireless's observation formats ported to Kotlin, and the upload to its server (plain Kotlin)

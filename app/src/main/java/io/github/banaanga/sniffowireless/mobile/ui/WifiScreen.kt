@@ -2,55 +2,47 @@ package io.github.banaanga.sniffowireless.mobile.ui
 
 import android.content.Intent
 import android.provider.Settings
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.location.LocationManagerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.banaanga.sniffowireless.mobile.MainViewModel
+import io.github.banaanga.sniffowireless.mobile.data.DeviceType
 import io.github.banaanga.sniffowireless.mobile.data.WifiNetwork
+
+/** Phone or USB adapter, as a segmented control at the top of the Wi-Fi and Bluetooth pages. */
+@Composable
+fun SourceSeg(usb: Boolean, onChange: (Boolean) -> Unit) {
+    Seg(listOf(false to "Phone", true to "USB adapter"), usb, onChange, Modifier.padding(start = 16.dp, bottom = 6.dp))
+}
 
 @Composable
 fun WifiScreen(vm: MainViewModel) {
     // The phone's own Wi-Fi can only scan; an MT7921U adapter adds real monitor mode.
     var usbAdapter by rememberSaveable { mutableStateOf(false) }
     Column {
-        Row(Modifier.padding(start = 12.dp, bottom = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            FilterChip(selected = !usbAdapter, onClick = { usbAdapter = false }, label = { Text("Phone") })
-            FilterChip(selected = usbAdapter, onClick = { usbAdapter = true }, label = { Text("USB adapter") })
-        }
+        SourceSeg(usbAdapter) { usbAdapter = it }
         if (usbAdapter) UsbAdapterSection(vm) else PhoneWifiScan(vm)
     }
+}
+
+fun securityTone(security: String): Tone = when {
+    security.equals("Open", true) || security.startsWith("OPN") -> Tone.BAD
+    security.startsWith("WEP") -> Tone.BAD
+    else -> Tone.NONE
 }
 
 @Composable
@@ -68,35 +60,26 @@ private fun PhoneWifiScan(vm: MainViewModel) {
     LaunchedEffect(Unit) { vm.wifi.scan() }
 
     val shown = results.filter { band == "All" || it.band == band }
-    Column {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("All", "2.4 GHz", "5 GHz", "6 GHz").forEach { b ->
-                FilterChip(selected = band == b, onClick = { band = b }, label = { Text(b) })
+    LazyColumn {
+        item(key = "controls") {
+            Column {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Seg(listOf("All" to "All", "2.4 GHz" to "2.4", "5 GHz" to "5", "6 GHz" to "6 GHz"), band, { band = it })
+                    Spacer(Modifier.weight(1f))
+                    Btn("Scan", { vm.wifi.scan() }, Modifier.padding(start = 8.dp), icon = Icons.Filled.Refresh)
+                }
+                if (!locationOn) {
+                    Row(Modifier.padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        StatusLine("Location services are off: Android hides Wi-Fi results.", Tone.BAD, Modifier.weight(1f))
+                        Btn("Settings", { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) })
+                    }
+                }
+                status?.let { StatusLine(it, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) }
+                ChannelUsage(shown)
+                ListHead("${shown.size} access point" + if (shown.size == 1) "" else "s", "Signal")
             }
         }
-        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("${shown.size} access point" + if (shown.size == 1) "" else "s",Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-            Button(onClick = { vm.wifi.scan() }) {
-                Icon(Icons.Filled.Refresh, null)
-                Text("Scan", Modifier.padding(start = 4.dp))
-            }
-        }
-        if (!locationOn) {
-            Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Location services are off – Android hides Wi-Fi results.", Modifier.weight(1f),
-                    color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }) { Text("Settings") }
-            }
-        }
-        status?.let { Text(it, Modifier.padding(horizontal = 12.dp), style = MaterialTheme.typography.bodySmall) }
-        ChannelUsage(shown)
-        HorizontalDivider()
-        LazyColumn {
-            items(shown, key = { it.bssid + it.frequency }) { n ->
-                WifiRow(n) { selected = n }
-            }
-        }
+        items(shown, key = { it.bssid + it.frequency }) { n -> WifiRow(n) { selected = n } }
     }
 
     selected?.let { n ->
@@ -114,42 +97,43 @@ private fun PhoneWifiScan(vm: MainViewModel) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ChannelUsage(networks: List<WifiNetwork>) {
     if (networks.isEmpty()) return
     val byChannel = networks.groupBy { it.band to it.channel }.toSortedMap(compareBy({ it.first }, { it.second }))
-    FlowRow(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
-        Text("Channels: ", style = MaterialTheme.typography.labelSmall)
-        byChannel.forEach { (key, list) -> Tag("${key.second}×${list.size}") }
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+        H2("Channels")
+        FlowRow { byChannel.forEach { (key, list) -> Tag("${key.second} × ${list.size}") } }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun WifiRow(n: WifiNetwork, onClick: () -> Unit) {
-    ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
-        leadingContent = {
-            Icon(if (n.security == "Open") Icons.Filled.LockOpen else Icons.Filled.Lock, contentDescription = n.security)
+    val vendor = n.vendor ?: if (n.randomizedBssid) "Private / virtual BSSID" else null
+    DeviceRow(
+        title = n.ssid.ifBlank { "‹hidden›" },
+        strong = n.ssid.isNotBlank(),
+        kindColor = Sniffo.c.ap,
+        kind = "AP",
+        address = n.bssid,
+        live = n.isConnected,
+        identified = listOfNotNull(vendor, n.guess.type.label.takeIf { n.guess.type != DeviceType.UNKNOWN }).joinToString(" · "),
+        onClick = onClick,
+        trailing = { RssiText(n.rssi) },
+        tags = {
+            Tag(n.security, securityTone(n.security))
+            Tag(n.band)
+            Tag("ch ${n.channel}")
+            n.standard?.let { Tag(it) }
+            if (n.isConnected) Tag("connected", Tone.ON)
         },
-        headlineContent = {
-            Text(
-                n.ssid.ifBlank { "‹hidden›" } + if (n.isConnected) "  ● connected" else "",
-                fontWeight = if (n.isConnected) FontWeight.Bold else FontWeight.Normal,
-            )
-        },
-        supportingContent = {
-            Column {
-                val vendor = n.vendor ?: if (n.randomizedBssid) "private / virtual BSSID" else "unknown vendor"
-                Text("${n.bssid} · $vendor", style = MaterialTheme.typography.bodySmall)
-                FlowRow {
-                    Tag(n.band)
-                    Tag("ch ${n.channel}")
-                    Tag(n.security)
-                    n.standard?.let { Tag(it) }
-                    if (n.guess.type != io.github.banaanga.sniffowireless.mobile.data.DeviceType.ROUTER) Tag(n.guess.type.label)
-                }
-            }
-        },
-        trailingContent = { RssiText(n.rssi) },
     )
+}
+
+/** Text in the muted colour, for counts and notes between controls. */
+@Composable
+fun Muted(text: String, modifier: Modifier = Modifier) {
+    Text(text, modifier, style = MaterialTheme.typography.bodySmall, color = Sniffo.c.muted)
 }

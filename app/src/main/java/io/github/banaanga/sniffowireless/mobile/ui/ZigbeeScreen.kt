@@ -1,33 +1,13 @@
 package io.github.banaanga.sniffowireless.mobile.ui
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Hub
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -61,10 +41,7 @@ fun ZigbeeScreen(vm: MainViewModel) {
 
     LazyColumn {
         item(key = "mode") {
-            Row(Modifier.padding(start = 12.dp, top = 4.dp)) {
-                FilterChip(selected = !sniffer, enabled = !running, onClick = { sniffer = false }, label = { Text("Network scan") })
-                FilterChip(selected = sniffer, enabled = !running, onClick = { sniffer = true }, label = { Text("Sniffer") }, modifier = Modifier.padding(start = 6.dp))
-            }
+            Seg(listOf(false to "Network scan", true to "Sniffer"), sniffer, { sniffer = it }, Modifier.padding(start = 16.dp, bottom = 6.dp), enabled = !running)
         }
         if (sniffer) {
             item(key = "sniffer-controls") { SnifferControls(sniffChannel, !running) { sniffChannel = it } }
@@ -85,13 +62,13 @@ fun ZigbeeScreen(vm: MainViewModel) {
         }
         item(key = "status") {
             Column {
-                if (running) LinearProgressIndicator(Modifier.fillMaxWidth().padding(bottom = 4.dp))
-                status?.let { Text(it, Modifier.padding(horizontal = 12.dp), style = MaterialTheme.typography.bodySmall) }
-                error?.let { Text(it, Modifier.padding(horizontal = 12.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                if (running) LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), color = Sniffo.c.zigbee, trackColor = Sniffo.c.panel2)
+                status?.let { StatusLine(it, if (running) Tone.ON else Tone.NONE) }
+                error?.let { StatusLine(it, Tone.BAD) }
                 info?.let { i ->
-                    Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                         InfoRow("Firmware", "${i.firmware} · ${i.family.label}")
-                        i.notes.forEach { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        i.notes.forEach { Muted(it) }
                     }
                 }
             }
@@ -101,7 +78,7 @@ fun ZigbeeScreen(vm: MainViewModel) {
                 item(key = "activity") { SnifferActivity(activity, currentChannel, framesHeard, framesUndecoded) }
             }
             if (sniffed.isNotEmpty()) {
-                item(key = "sniffed-divider") { HorizontalDivider(Modifier.padding(top = 8.dp)) }
+                item(key = "sniffed-divider") { Column { Spacer(Modifier.height(8.dp)); ListHead("${sniffed.size} radios", "Signal") } }
             }
             items(sniffed, key = { "sniffed:" + it.key }) { d -> SniffedDeviceRow(d) { selectedDevice = d.key } }
         } else {
@@ -109,18 +86,16 @@ fun ZigbeeScreen(vm: MainViewModel) {
                 item(key = "energy") { EnergySection(energy) }
             }
             if (networks.isNotEmpty()) {
-                item(key = "divider") { HorizontalDivider(Modifier.padding(top = 8.dp)) }
+                item(key = "divider") { Column { Spacer(Modifier.height(8.dp)); ListHead("${networks.size} networks", "Signal") } }
             }
             items(networks, key = { it.key }) { n -> NetworkRow(n) { selectedKey = n.key } }
         }
         if (!sniffer && info != null && !running) {
             item(key = "limits") {
-                Text(
+                Hint(
                     "A scan finds networks and the routers that answer it. Battery-powered sensors and the " +
                         "devices inside other networks don't respond, so they won't appear.",
-                    Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Modifier.padding(16.dp),
                 )
             }
         }
@@ -137,58 +112,43 @@ fun ZigbeeScreen(vm: MainViewModel) {
 
 @Composable
 private fun NoDongleCard() {
-    Card(Modifier.fillMaxWidth().padding(12.dp)) {
-        Column(Modifier.padding(12.dp)) {
-            Text("Plug in a Zigbee USB dongle", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-            Text(
-                "Phones have no Zigbee radio, so scanning needs a coordinator stick connected through a USB-OTG " +
-                    "adapter. Sticks running Z-Stack (Sonoff ZBDongle-P, CC2652) and EmberZNet (Sonoff ZBDongle-E, " +
-                    "SkyConnect, ZBT-1) are supported.",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            Text(
-                "Scanning is read-only and doesn't change anything stored on the stick. Close any other app using it first.",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-        }
+    Panel(title = "Stick") {
+        StatusLine("No Zigbee stick plugged in", modifier = Modifier)
+        Muted(
+            "Phones have no Zigbee radio, so scanning needs a coordinator stick connected through a USB-OTG " +
+                "adapter. Sticks running Z-Stack (Sonoff ZBDongle-P, CC2652) and EmberZNet (Sonoff ZBDongle-E, " +
+                "SkyConnect, ZBT-1) are supported.",
+            Modifier.padding(top = 4.dp),
+        )
+        Muted("Scanning is read-only and doesn't change anything stored on the stick. Close any other app using it first.",
+            Modifier.padding(top = 4.dp))
     }
 }
 
 @Composable
 private fun DongleCard(dongle: UsbDongle, running: Boolean, startLabel: String, onScan: () -> Unit, onStop: () -> Unit) {
-    Card(Modifier.fillMaxWidth().padding(12.dp)) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(dongle.name, fontWeight = FontWeight.Bold)
-                Text(dongle.id, style = MaterialTheme.typography.labelSmall)
-                dongle.blocker?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
-            }
-            when {
-                dongle.blocker != null -> Unit
-                running -> OutlinedButton(onClick = onStop) { Text("Stop") }
-                else -> Button(onClick = onScan) { Text(startLabel) }
-            }
+    Panel(title = "Stick", action = {
+        when {
+            dongle.blocker != null -> Unit
+            running -> Btn("Stop", onStop)
+            else -> Btn(startLabel, onScan)
         }
+    }) {
+        StatusLine("${dongle.name} connected", if (dongle.blocker == null) Tone.ON else Tone.WARN, Modifier)
+        Text(dongle.id, style = Mono, color = Sniffo.c.muted, modifier = Modifier.padding(top = 2.dp))
+        dongle.blocker?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Sniffo.c.bad, modifier = Modifier.padding(top = 4.dp)) }
     }
 }
 
 @Composable
 private fun EnergySection(energy: List<ChannelEnergy>) {
-    Column(Modifier.padding(horizontal = 12.dp)) {
-        SectionTitle("Channel interference")
-        Text("Lower is better. Channels 15, 20 and 25 sit between the main Wi-Fi channels.",
-            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Panel(Modifier.padding(top = 6.dp), title = "Channel interference") {
+        Muted("Lower is better. Channels 15, 20 and 25 sit between the main Wi-Fi channels.", Modifier.padding(bottom = 6.dp))
         energy.forEach { e ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(e.channel.toString(), Modifier.width(28.dp), style = MaterialTheme.typography.labelSmall)
-                LinearProgressIndicator(
-                    progress = { ((e.rssi + 100) / 70f).coerceIn(0f, 1f) },
-                    modifier = Modifier.weight(1f),
-                    drawStopIndicator = {},
-                )
-                Text("${e.rssi} dBm", Modifier.padding(start = 8.dp).width(56.dp), style = MaterialTheme.typography.labelSmall)
+            Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(e.channel.toString(), Modifier.width(28.dp), style = Mono, color = Sniffo.c.muted)
+                Bar((e.rssi + 100) / 70f, Sniffo.c.zigbee, Modifier.weight(1f))
+                Text("${e.rssi} dBm", Modifier.padding(start = 8.dp).width(60.dp), style = Mono, color = Sniffo.c.muted)
             }
         }
     }
@@ -196,25 +156,24 @@ private fun EnergySection(energy: List<ChannelEnergy>) {
 
 private fun panText(panId: Int) = "0x%04X".format(panId)
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun NetworkRow(n: ZigbeeNetwork, onClick: () -> Unit) {
-    ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
-        leadingContent = { Icon(Icons.Filled.Hub, contentDescription = null) },
-        headlineContent = { Text("PAN ${panText(n.panId)}") },
-        supportingContent = {
-            Column {
-                Text(listOfNotNull(n.extendedPanId, n.possibleVendor?.let { "$it?" }).joinToString(" · "), style = MaterialTheme.typography.bodySmall)
-                FlowRow {
-                    Tag("ch ${n.channel}")
-                    if (n.permitJoining) Tag("Open for joining")
-                    if (n.routers.size > 1) Tag("${n.routers.size} routers")
-                }
-            }
-        },
-        trailingContent = {
+    DeviceRow(
+        title = "PAN ${panText(n.panId)}",
+        kindColor = Sniffo.c.zigbee,
+        kind = "Zigbee network",
+        address = n.extendedPanId,
+        identified = n.possibleVendor?.let { "$it?" },
+        onClick = onClick,
+        trailing = {
             if (n.rssi != null) RssiText(n.rssi)
-            else n.lqi?.let { Text("LQI $it", style = MaterialTheme.typography.labelMedium) }
+            else n.lqi?.let { Text("LQI $it", style = Mono, color = Sniffo.c.muted) }
+        },
+        tags = {
+            Tag("ch ${n.channel}")
+            if (n.permitJoining) Tag("open for joining", Tone.WARN)
+            if (n.routers.size > 1) Tag("${n.routers.size} routers")
         },
     )
 }
@@ -239,8 +198,7 @@ private fun NetworkDetail(n: ZigbeeNetwork, onDismiss: () -> Unit) {
             InfoRow("Answered by", n.routers.sorted().joinToString(", ") { if (it == 0) "coordinator" else "0x%04X".format(it) })
         }
         if (n.possibleVendor != null) {
-            Text("The vendor is only a hint: it comes from the extended ID, which many coordinators pick at random.",
-                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Muted("The vendor is only a hint: it comes from the extended ID, which many coordinators pick at random.")
         }
     }
 }
