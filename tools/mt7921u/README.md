@@ -1,6 +1,6 @@
 # MT7921U userspace driver: PC prototype
 
-sniffowireless-mobile's own driver for MediaTek MT7921U Wi-Fi adapters (USB ID `0e8d:7961`, e.g. Alfa AWUS036AXML). It drives the
+sniffowireless-mobile's own driver for MediaTek MT7921U Wi-Fi adapters (USB ID `0e8d:7961`, e.g. BrosTrend AXE3000 model AX9L or Alfa AWUS036AXML). It drives the
 chip directly over USB, so on Android it won't need root. It's developed on a Linux PC first, checked against the Linux
 `mt7921u` driver.
 

@@ -80,9 +80,12 @@ choice is remembered.
 sniffowireless-mobile can drive two kinds of USB adapter itself, without root, through a USB-C cable or OTG adapter. Choose
 **USB adapter** at the top of the Wi-Fi or Bluetooth tab.
 
-* **Wi-Fi monitor mode** with a MediaTek MT7921U (`0e8d:7961`, e.g. Alfa AWUS036AXML): listens on 2.4, 5 and 6 GHz
+* **Wi-Fi monitor mode** with a MediaTek MT7921U adapter (USB ID `0e8d:7961`): listens on 2.4, 5 and 6 GHz
   and lists networks and the devices talking in them, including probe requests. Nothing is transmitted. A capture
-  for Wireshark is saved too. See [tools/mt7921u](tools/mt7921u/README.md).
+  for Wireshark is saved too. See [tools/mt7921u](tools/mt7921u/README.md). Compatible adapters:
+  * BrosTrend AXE3000 Linux WiFi, model AX9L (tested)
+  * Alfa AWUS036AXML
+  * Any other adapter with the MT7921U / MT7921AUN chip that shows up as `0e8d:7961`
 * **Bluetooth** with a USB Bluetooth adapter, tested with the TP-Link UB500 Plus (Realtek RTL8761BU, `2357:0604`).
   Compared with the phone's own Bluetooth it reports every advertising packet without Android's filtering, hears
   long-range (Coded PHY) devices, knows whether an address is public or random, and has a **Listen only** mode that
