@@ -23,7 +23,8 @@ class LiveServerTest {
         val status = StatusBoard()
         val logs = LogBuffer()
         val f = Forwarder(Target(server!!, token!!), status, logs, mapOf("version" to "mobile test", "arch" to "jvm"),
-            system = { mapOf("memory" to mapOf("total" to 8_000_000_000L, "used" to 3_000_000_000L)) })
+            system = { mapOf("memory" to mapOf("total" to 8_000_000_000L, "used" to 3_000_000_000L),
+                "battery" to mapOf("percent" to 54.0, "charging" to true, "source" to "usb", "temperature" to 31.5)) })
         val now = System.currentTimeMillis() / 1000.0
         status.register("wifi:mt7921u", "type" to "wifi", "iface" to "mt7921u", "state" to "capturing", "channel" to "36", "band" to "5",
             "channels" to listOf("1", "6", "11", "36"), "bands" to listOf("2.4", "5"), "chan_rev" to 0, "supported_bands" to listOf("2.4", "5", "6"),

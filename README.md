@@ -43,7 +43,8 @@ The phone then works like one of sniffowireless's remote sensors:
   reach the phone with its next upload and are applied while it
   runs; the server shows *applied* once the phone reports the new revision.
 * **Status, load and logs:** each source appears on the server's Sensors page with its state and hardware, with the
-  phone's memory, disk and CPU use, and its log lines on the Logs page.
+  phone's memory, disk and CPU use, its battery (level, charging, charger type and temperature, which the server
+  shows with the sensor and turns amber at 20% and red at 10% while not charging), and its log lines on the Logs page.
 * **Keeps running:** a foreground service with a notification keeps capturing and sending with the screen off. Uploads
   go every 2 seconds; when the server can't be reached they are kept (up to 50,000 observations) and sent later.
 

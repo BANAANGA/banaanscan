@@ -3,6 +3,9 @@ package io.github.banaanga.sniffowireless.mobile.sensor
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
 import android.os.Build
 import android.os.Debug
 import android.os.Process
@@ -188,6 +191,34 @@ class Hub(private val app: Application) {
             "cpu" to linkedMapOf("cores" to cores, "sniffowireless_percent" to Math.round(ours * 10) / 10.0),
             "memory" to linkedMapOf("total" to mem.totalMem, "used" to mem.totalMem - mem.availMem, "sniffowireless_rss" to Debug.getPss() * 1024L),
             "disk" to disk?.let { linkedMapOf("total" to it.totalBytes, "used" to it.totalBytes - it.availableBytes, "free" to it.availableBytes) },
+            "battery" to battery(),
+        )
+    }
+
+    /**
+     * The phone's battery in the shape sniffowireless's sensors send it (system.battery, shown on its Sensors page):
+     * {percent, charging (true while charging or full), source (ac, usb, wireless, dock), temperature (°C)}. Null when
+     * Android reports no level (a device without a battery).
+     */
+    fun battery(): Map<String, Any?>? {
+        val i = app.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED)) ?: return null
+        val level = i.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+        val scale = i.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+        if (level < 0 || scale <= 0 || !i.getBooleanExtra(BatteryManager.EXTRA_PRESENT, true)) return null
+        val status = i.getIntExtra(BatteryManager.EXTRA_STATUS, BatteryManager.BATTERY_STATUS_UNKNOWN)
+        val source = when (i.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0)) {
+            BatteryManager.BATTERY_PLUGGED_AC -> "ac"
+            BatteryManager.BATTERY_PLUGGED_USB -> "usb"
+            BatteryManager.BATTERY_PLUGGED_WIRELESS -> "wireless"
+            8 -> "dock"  // BATTERY_PLUGGED_DOCK, Android 14
+            else -> null
+        }
+        val temp = i.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, Int.MIN_VALUE).takeIf { it != Int.MIN_VALUE }?.let { it / 10.0 }
+        return linkedMapOf(
+            "percent" to Math.round(1000.0 * level / scale) / 10.0,
+            "charging" to (status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL),
+            "source" to source,
+            "temperature" to temp?.takeIf { it in -40.0..120.0 },
         )
     }
 }

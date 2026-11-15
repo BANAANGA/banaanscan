@@ -117,6 +117,18 @@ fun SensorScreen(vm: MainViewModel) {
                     if (running) "Sending to ${s.serverUrl}" else "Send what this phone hears to a sniffowireless server, like one of its Raspberry Pi sensors.",
                     Modifier.padding(top = 2.dp),
                 )
+                hub.battery()?.let { b ->
+                    val pct = (b["percent"] as Double)
+                    val charging = b["charging"] == true
+                    StatusLine(
+                        "Battery %s%%".format(if (pct % 1.0 == 0.0) pct.toInt().toString() else pct.toString()) +
+                            (if (charging) " · charging" + ((b["source"] as String?)?.let { " ($it)" } ?: "") else "") +
+                            ((b["temperature"] as Double?)?.let { " · %.1f °C".format(it) } ?: "") +
+                            if (running) " · sent to the server" else "",
+                        when { charging || pct > 20 -> Tone.ON; pct > 10 -> Tone.WARN; else -> Tone.BAD },
+                        Modifier.padding(top = 6.dp),
+                    )
+                }
                 if (running) {
                     val f = hub.forwarder
                     Text(
