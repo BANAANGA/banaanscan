@@ -45,6 +45,11 @@ The phone then works like one of sniffowireless's remote sensors:
 * **Status, load and logs:** each source appears on the server's Sensors page with its state and hardware, with the
   phone's memory, disk and CPU use, its battery (level, charging, charger type and temperature, which the server
   shows with the sensor and turns amber at 20% and red at 10% while not charging), and its log lines on the Logs page.
+* **Frame recording:** on the server, **Settings → Frame recording → Record on** this phone records what its USB
+  adapters receive for as long as you choose: MT7921U Wi-Fi frames (of data frames only the headers), USB Bluetooth HCI
+  events, Zigbee frames and LoRa frames. The phone sends the file to the server when it is done and deletes it here. It
+  then opens in the server's **Frames** page. The phone's own Wi-Fi and Bluetooth can't be recorded, because Android only
+  passes on what it already decoded, not the frames. Needs sniffowireless 33.2 or newer.
 * **Keeps running:** a foreground service with a notification keeps capturing and sending with the screen off. Uploads
   go every 2 seconds; when the server can't be reached they are kept (up to 50,000 observations) and sent later.
 
