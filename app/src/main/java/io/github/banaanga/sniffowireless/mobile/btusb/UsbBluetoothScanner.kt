@@ -163,7 +163,7 @@ class UsbBluetoothScanner(context: Context, private val hub: Hub? = null) {
                     "hw_maker" to a.device.manufacturerName, "hw_product" to a.device.productName,
                     "note" to if (passive) "Listen only: nothing is transmitted" else null)
                 scanner.onEvent = { code, params ->
-                    if (sensor.recorder.active) sensor.recorder.record("bt", STATUS, Recorder.hciEvent(code, params))
+                    if (sensor.recorder.tapping) sensor.recorder.record("bt", STATUS, Recorder.hciEvent(code, params))
                     if (sensor.sending) {
                         val now = sensor.now()
                         for (ev in Ble.parseEvent(code, params)) observer.observe(ev, now)?.let(sensor.sink::put)

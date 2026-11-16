@@ -50,6 +50,9 @@ The phone then works like one of sniffowireless's remote sensors:
   events, Zigbee frames and LoRa frames. The phone sends the file to the server when it is done and deletes it here. It
   then opens in the server's **Frames** page. The phone's own Wi-Fi and Bluetooth can't be recorded, because Android only
   passes on what it already decoded, not the frames. Needs sniffowireless 33.2 or newer.
+* **Live frames:** on the server, **Frames → Live → Radios of** this phone shows what its USB adapters receive as it
+  arrives. The same radios as frame recording can be shown. The phone sends the frames with its uploads, every 2 seconds and
+  at most 3,000 at a time, and stops when the server stops asking. Needs sniffowireless 33.3 or newer.
 * **Keeps running:** a foreground service with a notification keeps capturing and sending with the screen off. Uploads
   go every 2 seconds; when the server can't be reached they are kept (up to 50,000 observations) and sent later.
 

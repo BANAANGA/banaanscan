@@ -283,7 +283,7 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
                         val f = monitor.receive(100) ?: continue
                         if (f.fcsError) continue
                         writer.write(f.freqMhz, f.rssi, f.data)
-                        sensor?.recorder?.takeIf { it.active }?.record("wifi", STATUS, Recorder.radiotap(f.freqMhz, f.rssi) + f.data, mapOf("tuned" to freq))
+                        sensor?.recorder?.takeIf { it.tapping }?.record("wifi", STATUS, Recorder.radiotap(f.freqMhz, f.rssi) + f.data, mapOf("tuned" to freq))
                         collector.add(f.freqMhz, f.rssi, f.data)
                         sFrames++
                         sBytes += f.data.size

@@ -161,6 +161,7 @@ class Hub(private val app: Application) {
         forwarder.onZigbeeConfig = zigbeeControl::applyRemote
         forwarder.onLoraConfig = loraControl::applyRemote
         forwarder.capture = remoteCapture
+        forwarder.live = recorder.live
     }
 
     fun setSending(on: Boolean) {

@@ -293,7 +293,7 @@ class LoraScanner(context: Context, private val hub: Hub) {
                 },
                 onFrame = { obs, rx, profile ->
                     if (forSensor) hub.sink.put(obs)
-                    if (hub.recorder.active) hub.recorder.record("lora", name, Recorder.loraLine(rx).toByteArray(Charsets.US_ASCII))
+                    if (hub.recorder.tapping) hub.recorder.record("lora", name, Recorder.loraLine(rx).toByteArray(Charsets.US_ASCII))
                     record(rx, profile)
                 },
             )
