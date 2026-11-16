@@ -217,6 +217,8 @@ class Forwarder(
     var onLoraConfig: ((Any?) -> Unit)? = null
     /** Recording at the server's request (Settings → Frame recording on the server): its progress goes with every upload. */
     var capture: RemoteCapture? = null
+    /** Live frames for the server's Frames page: sent with every upload while the server asks for them. */
+    var live: LiveTap? = null
 
     val pending: Int @Synchronized get() = buf.size
 
@@ -239,7 +241,7 @@ class Forwarder(
         synchronized(this) { while (buf.isNotEmpty() && batch.size < 20_000) batch += buf.removeFirst() }
         val lines = logs.since(logCursor)
         val body = gzip(Json.encode(linkedMapOf("sent_at" to System.currentTimeMillis() / 1000.0, "obs" to batch, "status" to status.snapshot(),
-            "dropped" to dropped, "version" to version, "system" to system(), "logs" to lines, "log_epoch" to logs.epoch, "capture" to capture?.report())).toByteArray())
+            "dropped" to dropped, "version" to version, "system" to system(), "logs" to lines, "log_epoch" to logs.epoch, "capture" to capture?.report()) + liveFrames()).toByteArray())
         return try {
             val reply = post(t.serverUrl.trimEnd('/') + "/api/ingest", t.token, body)
             sent += batch.size
@@ -258,6 +260,13 @@ class Forwarder(
         }
     }
 
+    /** This upload's live frames, while the server wants them or some are still waiting. */
+    private fun liveFrames(): Map<String, Any?> {
+        val l = live ?: return emptyMap()
+        if (!l.active && l.pending == 0) return emptyMap()
+        return mapOf("frames" to l.drain(), "frames_dropped" to l.dropped)
+    }
+
     private fun handleReply(reply: String) {
         @Suppress("UNCHECKED_CAST")
         val parsed = runCatching { Json.parse(reply) as? Map<String, Any?> }.getOrNull() ?: return
@@ -265,6 +274,7 @@ class Forwarder(
         parsed["channel_config"]?.let { onChannelConfig?.invoke(it) }
         parsed["zigbee_config"]?.let { onZigbeeConfig?.invoke(it) }
         parsed["lora_config"]?.let { onLoraConfig?.invoke(it) }
+        live?.applyRemote(parsed["live"])
         val commands = (parsed["commands"] as? List<*>).orEmpty().filterIsInstance<Map<*, *>>()
         commands.filter { it["action"] == "capture" }.forEach { cmd ->
             capture?.handle(cmd) ?: logs.add("INFO", "sniffowireless.sensors", "The server asked for a recording, which this phone cannot make")

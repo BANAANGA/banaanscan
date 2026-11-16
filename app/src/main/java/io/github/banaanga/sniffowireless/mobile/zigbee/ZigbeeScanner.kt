@@ -385,7 +385,7 @@ class ZigbeeScanner(context: Context, private val hub: Hub? = null) {
                                     capture.capture(ctl.channels(ALL), (ctl.hopInterval(2.0) * 1000).toLong(),
                                         onChannel = { ch -> currentChannel.value = ch; h.status.update(name, "channel" to ch.toString()) },
                                         onFrame = { f ->
-                                            if (h.recorder.active) h.recorder.record("zigbee", name, f.data, mapOf("channel" to f.channel, "rssi" to f.rssi, "lqi" to f.lqi))
+                                            if (h.recorder.tapping) h.recorder.record("zigbee", name, f.data, mapOf("channel" to f.channel, "rssi" to f.rssi, "lqi" to f.lqi))
                                             synchronized(batch) { batch.add(Captured(f.channel, f.data, f.rssi, f.lqi)) }
                                         })
                                 }

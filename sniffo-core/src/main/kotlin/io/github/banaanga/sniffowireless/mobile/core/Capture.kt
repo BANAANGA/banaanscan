@@ -20,6 +20,9 @@ import java.util.zip.GZIPOutputStream
 class Recorder(private val clock: () -> Long = System::currentTimeMillis) {
     @Volatile var active = false
         private set
+    /** Live frames for the server's Frames page: the sources hand frames over while it or a recording wants them ([tapping]). */
+    val live = LiveTap(clock)
+    val tapping: Boolean get() = active || live.active
     @Volatile var file: File? = null
         private set
     @Volatile var frames = 0
@@ -49,6 +52,7 @@ class Recorder(private val clock: () -> Long = System::currentTimeMillis) {
 
     /** Called by the sources for every frame; does nothing (and costs nothing) unless a recording of that radio runs. */
     fun record(radio: String, src: String, raw: ByteArray, meta: Map<String, Any?> = emptyMap()) {
+        live.record(radio, src, raw, meta)
         if (!active || radio !in radios) return
         val bytes = if (radio == "wifi") trimWifi(raw) else raw
         val line = Json.encode(linkedMapOf<String, Any?>("ts" to clock() / 1000.0, "radio" to radio, "src" to src, "raw" to hex(bytes)) + meta)
@@ -191,5 +195,75 @@ class RemoteCapture(
             log("WARNING", "The recording the server asked for failed: ${e.message}")
             job = mapOf("id" to id, "state" to "failed", "frames" to recorder.frames, "error" to (e.message ?: e.toString()).take(200))
         }
+    }
+}
+
+
+/**
+ * Live frames for the server's Frames page (Frames → Live → Radios of this phone), as sniffowireless's capture.LiveTap does on a
+ * Raspberry Pi sensor: while the server's answers to the uploads ask for it ({"live": {"radios", "seconds"}}), every frame of
+ * those radios is kept until the next upload, which sends at most [SEND_MAX] of them. When more arrive than [BUFFER] holds the
+ * oldest go, and they are counted for the server to show. It stops by itself when the server stops asking.
+ */
+class LiveTap(private val clock: () -> Long = System::currentTimeMillis) {
+    @Volatile var radios: Set<String> = emptySet()
+        private set
+    @Volatile var until = 0L
+        private set
+    @Volatile var dropped = 0L
+        private set
+    private val buf = ArrayDeque<Map<String, Any?>>()
+
+    val active: Boolean get() = clock() < until
+    val pending: Int @Synchronized get() = buf.size
+
+    /** The server asked: keep going for [seconds] more (at most [HOLD]), with these radios. */
+    fun open(radios: Collection<String>, seconds: Double) {
+        this.radios = radios.filter { it in Recorder.RADIOS }.toSet()
+        until = clock() + (seconds.coerceIn(1.0, HOLD) * 1000).toLong()
+    }
+
+    @Synchronized
+    fun close() {
+        until = 0
+        buf.clear()
+    }
+
+    fun record(radio: String, src: String, raw: ByteArray, meta: Map<String, Any?>) {
+        if (!active || radio !in radios) return
+        val bytes = if (radio == "wifi") Recorder.trimWifi(raw) else raw
+        val frame = linkedMapOf<String, Any?>("ts" to clock() / 1000.0, "radio" to radio, "src" to src, "raw" to Recorder.hex(bytes)) + meta
+        synchronized(this) {
+            if (buf.size >= BUFFER) {
+                buf.removeFirst()
+                dropped++
+            }
+            buf.addLast(frame)
+        }
+    }
+
+    /** The frames for the next upload, oldest first. */
+    @Synchronized
+    fun drain(max: Int = SEND_MAX): List<Map<String, Any?>> {
+        val out = ArrayList<Map<String, Any?>>(minOf(max, buf.size))
+        while (buf.isNotEmpty() && out.size < max) out += buf.removeFirst()
+        return out
+    }
+
+    /** Applies what the server's answer says: {"radios", "seconds"} to go on, nothing (or anything else) to stop. */
+    fun applyRemote(conf: Any?) {
+        val m = conf as? Map<*, *>
+        val radios = m?.get("radios") as? List<*>
+        if (m != null && radios != null) {
+            open(radios.filterIsInstance<String>(), (m["seconds"] as? Number)?.toDouble() ?: HOLD)
+        } else if (until != 0L) {
+            close()
+        }
+    }
+
+    companion object {
+        const val HOLD = 15.0       // seconds the phone keeps sending after the last answer that asked for it (capture.LIVE_REMOTE_HOLD)
+        const val SEND_MAX = 3000   // frames per upload (capture.LIVE_SEND_MAX)
+        const val BUFFER = 6000     // frames waiting for the next upload (capture.LIVE_SENSOR_BUFFER)
     }
 }
