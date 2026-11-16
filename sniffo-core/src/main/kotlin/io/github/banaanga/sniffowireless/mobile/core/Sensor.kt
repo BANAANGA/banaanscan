@@ -1,6 +1,7 @@
 package io.github.banaanga.sniffowireless.mobile.core
 
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -214,6 +215,8 @@ class Forwarder(
     var onChannelConfig: ((Any?) -> Unit)? = null
     var onZigbeeConfig: ((Any?) -> Unit)? = null
     var onLoraConfig: ((Any?) -> Unit)? = null
+    /** Recording at the server's request (Settings → Frame recording on the server): its progress goes with every upload. */
+    var capture: RemoteCapture? = null
 
     val pending: Int @Synchronized get() = buf.size
 
@@ -236,7 +239,7 @@ class Forwarder(
         synchronized(this) { while (buf.isNotEmpty() && batch.size < 20_000) batch += buf.removeFirst() }
         val lines = logs.since(logCursor)
         val body = gzip(Json.encode(linkedMapOf("sent_at" to System.currentTimeMillis() / 1000.0, "obs" to batch, "status" to status.snapshot(),
-            "dropped" to dropped, "version" to version, "system" to system(), "logs" to lines, "log_epoch" to logs.epoch)).toByteArray())
+            "dropped" to dropped, "version" to version, "system" to system(), "logs" to lines, "log_epoch" to logs.epoch, "capture" to capture?.report())).toByteArray())
         return try {
             val reply = post(t.serverUrl.trimEnd('/') + "/api/ingest", t.token, body)
             sent += batch.size
@@ -262,12 +265,40 @@ class Forwarder(
         parsed["channel_config"]?.let { onChannelConfig?.invoke(it) }
         parsed["zigbee_config"]?.let { onZigbeeConfig?.invoke(it) }
         parsed["lora_config"]?.let { onLoraConfig?.invoke(it) }
-        (parsed["commands"] as? List<*>)?.takeIf { it.isNotEmpty() }?.let {
+        val commands = (parsed["commands"] as? List<*>).orEmpty().filterIsInstance<Map<*, *>>()
+        commands.filter { it["action"] == "capture" }.forEach { cmd ->
+            capture?.handle(cmd) ?: logs.add("INFO", "sniffowireless.sensors", "The server asked for a recording, which this phone cannot make")
+        }
+        if (commands.any { it["action"] == "reset" }) {
             logs.add("INFO", "sniffowireless.sensors", "The server asked for an adapter reset; replug the adapter on the phone instead")
         }
     }
 
     companion object {
+        /** Sends a recording the server asked for to /api/ingest/capture, with the sensor token. */
+        fun httpUpload(target: Target, id: String, file: File) {
+            val c = URL(target.serverUrl.trimEnd('/') + "/api/ingest/capture?id=$id").openConnection() as HttpURLConnection
+            try {
+                c.requestMethod = "POST"
+                c.connectTimeout = 15_000
+                c.readTimeout = 300_000
+                c.doOutput = true
+                c.setRequestProperty("Authorization", "Bearer ${target.token}")
+                c.setRequestProperty("Content-Type", "application/gzip")
+                c.setRequestProperty("User-Agent", "sniffowireless-mobile")
+                c.setFixedLengthStreamingMode(file.length())
+                c.outputStream.use { o -> file.inputStream().use { it.copyTo(o) } }
+                val code = c.responseCode
+                if (code >= 400) {
+                    val detail = runCatching { c.errorStream?.readBytes()?.toString(Charsets.UTF_8)?.take(200) }.getOrNull()
+                    throw IOException("HTTP $code" + (detail?.let { ": $it" } ?: ""))
+                }
+                c.inputStream.use { it.readBytes() }
+            } finally {
+                c.disconnect()
+            }
+        }
+
         fun gzip(data: ByteArray): ByteArray = ByteArrayOutputStream().also { o -> GZIPOutputStream(o).use { it.write(data) } }.toByteArray()
 
         /**

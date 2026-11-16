@@ -17,6 +17,8 @@ import io.github.banaanga.sniffowireless.mobile.btusb.UsbBluetoothScanner
 import io.github.banaanga.sniffowireless.mobile.core.Forwarder
 import io.github.banaanga.sniffowireless.mobile.core.LogBuffer
 import io.github.banaanga.sniffowireless.mobile.core.LoraControl
+import io.github.banaanga.sniffowireless.mobile.core.Recorder
+import io.github.banaanga.sniffowireless.mobile.core.RemoteCapture
 import io.github.banaanga.sniffowireless.mobile.lora.LoraScanner
 import io.github.banaanga.sniffowireless.mobile.core.Sink
 import io.github.banaanga.sniffowireless.mobile.core.StatusBoard
@@ -133,6 +135,11 @@ class Hub(private val app: Application) {
     /** USB device names of boards that answered as lora-sniffers: the Zigbee scanner leaves them alone. */
     val loraSniffers: MutableSet<String> = java.util.Collections.synchronizedSet(HashSet())
     val forwarder = Forwarder(null, status, logs, version(), system = ::system)
+    /** Frame recording at the server's request: the USB sources hand it every raw frame while one runs. */
+    val recorder = Recorder()
+    private val remoteCapture = RemoteCapture(recorder, java.io.File(app.filesDir, "captures"),
+        upload = { file, id -> Forwarder.httpUpload(settings.target ?: throw java.io.IOException("No server set"), id, file) },
+        log = { level, msg -> log(level, "sniffowireless.capture", msg) })
 
     /** True while sensor mode runs: observations go to the forwarder only then. */
     @Volatile var sending = false
@@ -153,6 +160,7 @@ class Hub(private val app: Application) {
         forwarder.onChannelConfig = wifiControl::applyRemote
         forwarder.onZigbeeConfig = zigbeeControl::applyRemote
         forwarder.onLoraConfig = loraControl::applyRemote
+        forwarder.capture = remoteCapture
     }
 
     fun setSending(on: Boolean) {

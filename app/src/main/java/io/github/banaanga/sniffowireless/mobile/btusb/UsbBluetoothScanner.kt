@@ -21,6 +21,7 @@ import io.github.banaanga.sniffowireless.mobile.bthci.InquiryComplete
 import io.github.banaanga.sniffowireless.mobile.bthci.InquiryResponse
 import io.github.banaanga.sniffowireless.mobile.bthci.Scanner
 import io.github.banaanga.sniffowireless.mobile.bthci.hex
+import io.github.banaanga.sniffowireless.mobile.core.Recorder
 import io.github.banaanga.sniffowireless.mobile.core.Ble
 import io.github.banaanga.sniffowireless.mobile.core.BtObserver
 import io.github.banaanga.sniffowireless.mobile.core.Companies
@@ -162,6 +163,7 @@ class UsbBluetoothScanner(context: Context, private val hub: Hub? = null) {
                     "hw_maker" to a.device.manufacturerName, "hw_product" to a.device.productName,
                     "note" to if (passive) "Listen only: nothing is transmitted" else null)
                 scanner.onEvent = { code, params ->
+                    if (sensor.recorder.active) sensor.recorder.record("bt", STATUS, Recorder.hciEvent(code, params))
                     if (sensor.sending) {
                         val now = sensor.now()
                         for (ev in Ble.parseEvent(code, params)) observer.observe(ev, now)?.let(sensor.sink::put)

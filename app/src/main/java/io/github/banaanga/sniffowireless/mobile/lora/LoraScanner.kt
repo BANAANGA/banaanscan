@@ -15,6 +15,7 @@ import com.hoho.android.usbserial.driver.Cp21xxSerialDriver
 import com.hoho.android.usbserial.driver.ProbeTable
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
+import io.github.banaanga.sniffowireless.mobile.core.Recorder
 import io.github.banaanga.sniffowireless.mobile.core.LineLink
 import io.github.banaanga.sniffowireless.mobile.core.LoraClassifier
 import io.github.banaanga.sniffowireless.mobile.core.LoraException
@@ -292,6 +293,7 @@ class LoraScanner(context: Context, private val hub: Hub) {
                 },
                 onFrame = { obs, rx, profile ->
                     if (forSensor) hub.sink.put(obs)
+                    if (hub.recorder.active) hub.recorder.record("lora", name, Recorder.loraLine(rx).toByteArray(Charsets.US_ASCII))
                     record(rx, profile)
                 },
             )

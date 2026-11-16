@@ -21,6 +21,7 @@ import io.github.banaanga.sniffowireless.mobile.mt7921u.Mt7921u
 import io.github.banaanga.sniffowireless.mobile.mt7921u.PatchFile
 import io.github.banaanga.sniffowireless.mobile.mt7921u.RamFile
 import io.github.banaanga.sniffowireless.mobile.mt7921u.UsbIo
+import io.github.banaanga.sniffowireless.mobile.core.Recorder
 import io.github.banaanga.sniffowireless.mobile.core.AttrGates
 import io.github.banaanga.sniffowireless.mobile.core.Channels
 import io.github.banaanga.sniffowireless.mobile.core.Gate
@@ -282,6 +283,7 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
                         val f = monitor.receive(100) ?: continue
                         if (f.fcsError) continue
                         writer.write(f.freqMhz, f.rssi, f.data)
+                        sensor?.recorder?.takeIf { it.active }?.record("wifi", STATUS, Recorder.radiotap(f.freqMhz, f.rssi) + f.data, mapOf("tuned" to freq))
                         collector.add(f.freqMhz, f.rssi, f.data)
                         sFrames++
                         sBytes += f.data.size
