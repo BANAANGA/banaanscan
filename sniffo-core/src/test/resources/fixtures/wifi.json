@@ -14,6 +14,8 @@
       "ap": {
        "ap_name": "Hallway AP",
        "ap_name_src": "Ubiquiti",
+       "basic_rate": 6.0,
+       "beacon_len": 392,
        "beacon_protection": true,
        "beacon_tu": 100,
        "boot": 1699876543,
@@ -114,7 +116,7 @@
    "tuned": null
   },
   {
-   "frame": "80000000ffffffffffff0211223344660211223344664006081a99be1c00000064000431000c4578616d706c65205750413301088c129824b048606c3d169505000000000000000000000000000000000000000030140100000fac040100000fac040100000fac08cc00ff16230000000000001c00000000000000000000fafffaffff0a6c000002000000000000ff0b6b00000000000000000000ff0724f03f00050000",
+   "frame": "80000000ffffffffffff020000bb0002020000bb00024006081a99be1c00000064000431000c4578616d706c65205750413301088c129824b048606c3d169505000000000000000000000000000000000000000030140100000fac040100000fac040100000fac08cc00ff16230000000000001c00000000000000000000fafffaffff0a6c000002000000000000ff0b6b00000000000000000000ff0724f03f00050000",
    "freq": 5745,
    "name": "beacon WPA3 only",
    "obs": [
@@ -125,6 +127,8 @@
      "enc": "WPA3/SAE",
      "extra": {
       "ap": {
+       "basic_rate": 6.0,
+       "beacon_len": 168,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "871ae53ec6d4",
@@ -158,7 +162,7 @@
       }
      },
      "freq": 5745,
-     "mac": "02:11:22:33:44:66",
+     "mac": "02:00:00:bb:00:02",
      "rssi": -60,
      "ssid": "Example WPA3",
      "t": "wifi_ap",
@@ -181,6 +185,8 @@
      "enc": "WPA3-transition/PSK",
      "extra": {
       "ap": {
+       "basic_rate": 1.0,
+       "beacon_len": 163,
        "beacon_protection": true,
        "beacon_tu": 100,
        "boot": 1699876543,
@@ -256,6 +262,8 @@
      "enc": "WPA2/24",
      "extra": {
       "ap": {
+       "basic_rate": 1.0,
+       "beacon_len": 96,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "7d8dbdebb368",
@@ -296,7 +304,7 @@
    "tuned": null
   },
   {
-   "frame": "80000000ffffffffffff0211223344660211223344664006081a99be1c000000640004210000010882848b960c12182403010b",
+   "frame": "80000000ffffffffffff020000bb0002020000bb00024006081a99be1c000000640004210000010882848b960c12182403010b",
    "freq": 2462,
    "name": "beacon hidden open",
    "obs": [
@@ -307,6 +315,8 @@
      "enc": "OPN",
      "extra": {
       "ap": {
+       "basic_rate": 1.0,
+       "beacon_len": 55,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "b8fcdccb3d94"
@@ -323,7 +333,7 @@
       }
      },
      "freq": 2462,
-     "mac": "02:11:22:33:44:66",
+     "mac": "02:00:00:bb:00:02",
      "rssi": -80,
      "ssid": null,
      "t": "wifi_ap",
@@ -335,7 +345,7 @@
    "tuned": null
   },
   {
-   "frame": "80000000ffffffffffff0211223344660211223344664006081a99be1c000000640004210009000000000000000000010882848b960c12182403010b",
+   "frame": "80000000ffffffffffff020000bb0002020000bb00024006081a99be1c000000640004210009000000000000000000010882848b960c12182403010b",
    "freq": 2462,
    "name": "beacon zero-filled ssid",
    "obs": [
@@ -346,6 +356,8 @@
      "enc": "OPN",
      "extra": {
       "ap": {
+       "basic_rate": 1.0,
+       "beacon_len": 64,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "b8fcdccb3d94"
@@ -362,7 +374,7 @@
       }
      },
      "freq": 2462,
-     "mac": "02:11:22:33:44:66",
+     "mac": "02:00:00:bb:00:02",
      "rssi": -80,
      "ssid": null,
      "t": "wifi_ap",
@@ -385,6 +397,8 @@
      "enc": "WEP",
      "extra": {
       "ap": {
+       "basic_rate": 1.0,
+       "beacon_len": 58,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "7420e47932ee"
@@ -423,6 +437,8 @@
      "enc": "WPA/PSK",
      "extra": {
       "ap": {
+       "basic_rate": 1.0,
+       "beacon_len": 84,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "1cef25c19eb8",
@@ -465,6 +481,8 @@
      "enc": "WPA/PSK,WPA2/PSK",
      "extra": {
       "ap": {
+       "basic_rate": 1.0,
+       "beacon_len": 106,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "db65cd815840",
@@ -522,6 +540,8 @@
      "enc": "WPA2/PSK",
      "extra": {
       "ap": {
+       "basic_rate": 6.0,
+       "beacon_len": 106,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "fdd2c9e45ab3",
@@ -576,6 +596,8 @@
      "enc": "WPA2/PSK",
      "extra": {
       "ap": {
+       "basic_rate": 6.0,
+       "beacon_len": 108,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "71b9e091b784",
@@ -614,7 +636,7 @@
    "tuned": null
   },
   {
-   "frame": "80000000ffffffffffff0211223344660211223344664006081a99be1c00000064001011000353697801088c129824b048606c30140100000fac040100000fac040100000fac08c000ff16230000000000001c00000000000000000000fafffaffff0724f03f003f0000ff033b0000",
+   "frame": "80000000ffffffffffff020000bb0002020000bb00024006081a99be1c00000064001011000353697801088c129824b048606c30140100000fac040100000fac040100000fac08c000ff16230000000000001c00000000000000000000fafffaffff0724f03f003f0000ff033b0000",
    "freq": 6135,
    "name": "beacon 6 GHz",
    "obs": [
@@ -625,6 +647,8 @@
      "enc": "WPA3/SAE",
      "extra": {
       "ap": {
+       "basic_rate": 6.0,
+       "beacon_len": 115,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "9b4035aa1e1e",
@@ -656,7 +680,7 @@
       }
      },
      "freq": 6135,
-     "mac": "02:11:22:33:44:66",
+     "mac": "02:00:00:bb:00:02",
      "rssi": -62,
      "ssid": "Six",
      "t": "wifi_ap",
@@ -668,7 +692,7 @@
    "tuned": null
   },
   {
-   "frame": "80000000ffffffffffff0211223344660211223344664006081a99be1c00000064000431000353697801088c129824b048606c30140100000fac040100000fac040100000fac08c000",
+   "frame": "80000000ffffffffffff020000bb0002020000bb00024006081a99be1c00000064000431000353697801088c129824b048606c30140100000fac040100000fac040100000fac08c000",
    "freq": 5185,
    "name": "beacon 6 GHz labelled 5 GHz",
    "obs": [
@@ -679,6 +703,8 @@
      "enc": "WPA3/SAE",
      "extra": {
       "ap": {
+       "basic_rate": 6.0,
+       "beacon_len": 77,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "a5904267bd12",
@@ -705,7 +731,7 @@
       }
      },
      "freq": 6135,
-     "mac": "02:11:22:33:44:66",
+     "mac": "02:00:00:bb:00:02",
      "rssi": -62,
      "ssid": "Six",
      "t": "wifi_ap",
@@ -728,6 +754,8 @@
      "enc": "OPN",
      "extra": {
       "ap": {
+       "basic_rate": 1.0,
+       "beacon_len": 61,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "a4a45e205af7"
@@ -771,6 +799,8 @@
        "aruba": [
         "AP name"
        ],
+       "basic_rate": 6.0,
+       "beacon_len": 156,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "0d8fef9f2b96",
@@ -829,6 +859,8 @@
      "enc": "OPN",
      "extra": {
       "ap": {
+       "basic_rate": 1.0,
+       "beacon_len": 58,
        "beacon_tu": 100,
        "bsig": "a4a45e205af7"
       }
@@ -866,6 +898,8 @@
      "enc": "OPN",
      "extra": {
       "ap": {
+       "basic_rate": 1.0,
+       "beacon_len": 64,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "a4a45e205af7"
@@ -904,6 +938,8 @@
      "enc": "OPN",
      "extra": {
       "ap": {
+       "basic_rate": 1.0,
+       "beacon_len": 59,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "a4a45e205af7"
@@ -942,6 +978,8 @@
      "enc": "WPA2/PSK",
      "extra": {
       "ap": {
+       "basic_rate": 6.0,
+       "beacon_len": 110,
        "beacon_tu": 100,
        "boot": 1699876543,
        "bsig": "181be0006d38",
@@ -1238,13 +1276,13 @@
    "tuned": null
   },
   {
-   "frame": "2000000002112233446606aabbccddee021122334466800c14310a00021122334455000c4578616d706c6520486f6d6501088c129824b048606c30140100000fac040100000fac040100000fac020c002d1aef1917ffff0000000000000000000000000000000000000000003603123401",
+   "frame": "20000000020000bb000206aabbccddee020000bb0002800c14310a00021122334455000c4578616d706c6520486f6d6501088c129824b048606c30140100000fac040100000fac040100000fac020c002d1aef1917ffff0000000000000000000000000000000000000000003603123401",
    "freq": 5180,
    "name": "reassociation request",
    "obs": [
     {
      "band": "5",
-     "bssid": "02:11:22:33:44:66",
+     "bssid": "02:00:00:bb:00:02",
      "fp": {
       "src": "assoc",
       "wifi": {
@@ -1278,7 +1316,7 @@
      "band": "5",
      "channel": 36,
      "freq": 5180,
-     "mac": "02:11:22:33:44:66",
+     "mac": "02:00:00:bb:00:02",
      "rssi": null,
      "t": "wifi_ap",
      "ts": 1700000000.0
@@ -1344,7 +1382,7 @@
    "tuned": null
   },
   {
-   "frame": "3000000006aabbccddee021122334466021122334466800c0431000002c0",
+   "frame": "3000000006aabbccddee020000bb0002020000bb0002800c0431000002c0",
    "freq": 5180,
    "name": "reassociation response",
    "obs": [
@@ -1352,14 +1390,14 @@
      "band": "5",
      "channel": 36,
      "freq": 5180,
-     "mac": "02:11:22:33:44:66",
+     "mac": "02:00:00:bb:00:02",
      "rssi": -45,
      "t": "wifi_ap",
      "ts": 1700000000.0
     },
     {
      "band": "5",
-     "bssid": "02:11:22:33:44:66",
+     "bssid": "02:00:00:bb:00:02",
      "frame": "assoc",
      "freq": 5180,
      "mac": "06:aa:bb:cc:dd:ee",
@@ -1545,7 +1583,7 @@
    "tuned": null
   },
   {
-   "frame": "0841000002112233445506aabbccddee021122334466c012aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "frame": "0841000002112233445506aabbccddee020000bb0002c012aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
    "freq": 5180,
    "name": "data to AP",
    "obs": [
@@ -1620,7 +1658,7 @@
    "tuned": null
   },
   {
-   "frame": "0843000002112233446602112233445506aabbccddeec012000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "frame": "08430000020000bb000202112233445506aabbccddeec012000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
    "freq": 5180,
    "name": "data WDS",
    "obs": [],
@@ -1689,7 +1727,7 @@
   }
  ],
  "meta": {
-  "sniffowireless": "8f082f3",
+  "sniffowireless": "d8d4d03",
   "ts": 1700000000.0
  }
 }

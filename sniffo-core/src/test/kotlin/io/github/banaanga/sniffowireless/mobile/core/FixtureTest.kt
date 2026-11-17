@@ -59,6 +59,25 @@ class FixtureTest {
         done(failures)
     }
 
+    @Test fun `connection steps`() {
+        val failures = ArrayList<String>()
+        @Suppress("UNCHECKED_CAST")
+        val cases = fixture("joins.json")["cases"] as List<Map<String, Any?>>
+        assertEquals(28, cases.size)
+        for (c in cases) check(c["name"] as String, c["steps"], Joins.steps(hex(c["frame"] as String), -61), failures)
+        done(failures)
+    }
+
+    @Test fun `link quality counting`() {
+        val f = fixture("link.json")
+        val c = LinkCounter()
+        @Suppress("UNCHECKED_CAST")
+        for (frame in f["frames"] as List<String>) c.feed(hex(frame), (f["rate"] as Number).toDouble(), null, (f["rssi"] as Number).toInt())
+        val failures = ArrayList<String>()
+        check("link", f["obs"], c.drain(1_700_000_000.0).sortedBy { it["dir"] as String }, failures)
+        done(failures)
+    }
+
     @Test fun `Bluetooth events`() {
         val failures = ArrayList<String>()
         val f = fixture("bluetooth.json")

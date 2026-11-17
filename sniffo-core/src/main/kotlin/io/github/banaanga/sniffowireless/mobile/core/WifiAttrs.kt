@@ -230,6 +230,12 @@ object WifiAttrs {
         }
         if (roaming.isNotEmpty()) out["roaming"] = roaming.toSortedSet().toList()
         if (beaconTu != null && beaconTu != 0) out["beacon_tu"] = beaconTu
+        // The lowest basic rate (the rate beacons go at; above 54 Mb/s a byte is a BSS membership selector) and the beacon's
+        // size: MAC header, timestamp + interval + capabilities, the elements and the FCS. The server works out beacon airtime.
+        val basic = elts.filter { it.id == 1 || it.id == 50 }.flatMap { e -> e.info.map { it.toInt() and 0xFF } }
+            .filter { it and 0x80 != 0 && (it and 0x7F) in 1..108 }.map { (it and 0x7F) / 2.0 }
+        basic.minOrNull()?.let { out["basic_rate"] = it }
+        out["beacon_len"] = 40 + elts.sumOf { 2 + it.info.size }
         return out
     }
 

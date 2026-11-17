@@ -127,6 +127,25 @@ class MonitorTest {
         assertTrue(f.fcsError)
     }
 
+    @Test fun `how a frame was sent comes from the P-RXV`() {
+        fun rxv(mode: Int, index: Int, nsts: Int = 0, width: Int = 0, gi: Int = 0, stbc: Int = 0) =
+            index or (nsts shl 7) or (width shl 12) or (gi shl 15) or (stbc shl 22) or (mode shl 24)
+        fun phyOf(v0: Int): RxPhy {
+            val raw = descriptor(groups = 1 shl 13, channelCode = 36, rcpi = 0x8c, frame = beacon)
+            ByteBuffer.wrap(raw).order(ByteOrder.LITTLE_ENDIAN).putInt(24, v0)
+            return RxDescriptor.parse(raw, raw.size)!!.phy!!
+        }
+        val ht = phyOf(rxv(mode = 2, index = 15, nsts = 1, width = 1, gi = 1))
+        assertTrue(ht.isHt); assertEquals(15, ht.mcs); assertEquals(40, ht.width); assertEquals(1, ht.gi)
+        val he = phyOf(rxv(mode = 8, index = 11, nsts = 1, width = 2))
+        assertTrue(he.isHe); assertEquals(11, he.mcs); assertEquals(2, he.nss); assertEquals(80, he.width)
+        val stbc = phyOf(rxv(mode = 4, index = 9, nsts = 1, width = 2, stbc = 1))
+        assertTrue(stbc.isVht); assertEquals(1, stbc.nss)   // two space-time streams of one spatial stream
+        assertEquals(24.0, phyOf(rxv(mode = 1, index = 0x9)).legacyMbps)
+        assertEquals(11.0, phyOf(rxv(mode = 0, index = 3 or 4)).legacyMbps)   // short preamble bit set
+        assertNull(he.legacyMbps)
+    }
+
     @Test fun `events and damaged buffers are not frames`() {
         val event = descriptor(groups = 0, channelCode = 6, rcpi = 0, frame = beacon, type = 7)
         assertNull(RxDescriptor.parse(event, event.size))
