@@ -51,6 +51,7 @@
         ],
         "pmf": "optional"
        },
+       "width": 40,
        "wps_configured": true
       }
      },
@@ -58,6 +59,9 @@
       "src": "beacon",
       "wifi": {
        "capinfo": {
+        "akm": [
+         "PSK"
+        ],
         "caps": [
          "LDPC",
          "TX STBC",
@@ -76,7 +80,8 @@
          "FILS"
         ],
         "dsss": false,
-        "extcap": "0400488001404040c00110"
+        "extcap": "0400488001404040c00110",
+        "pmf": "optional"
        },
        "extcap_len": 11,
        "gen": 6,
@@ -143,14 +148,19 @@
          "CCMP"
         ],
         "pmf": "required"
-       }
+       },
+       "width": 40
       }
      },
      "fp": {
       "src": "beacon",
       "wifi": {
        "capinfo": {
-        "dsss": false
+        "akm": [
+         "SAE"
+        ],
+        "dsss": false,
+        "pmf": "required"
        },
        "eht": true,
        "gen": 7,
@@ -207,13 +217,18 @@
         ],
         "pmf": "optional",
         "transition": true
-       }
+       },
+       "width": 40
       }
      },
      "fp": {
       "src": "beacon",
       "wifi": {
        "capinfo": {
+        "akm": [
+         "PSK",
+         "SAE"
+        ],
         "caps": [
          "LDPC",
          "TX STBC",
@@ -227,7 +242,8 @@
          "FILS"
         ],
         "dsss": true,
-        "extcap": "0400488001404040c00110"
+        "extcap": "0400488001404040c00110",
+        "pmf": "optional"
        },
        "extcap_len": 11,
        "gen": 4,
@@ -285,7 +301,12 @@
       "src": "beacon",
       "wifi": {
        "capinfo": {
-        "dsss": true
+        "akm": [
+         "SAE-EXT",
+         "802.1X"
+        ],
+        "dsss": true,
+        "pmf": "required"
        },
        "rsn": true,
        "sig": "1,48"
@@ -503,7 +524,11 @@
       "src": "beacon",
       "wifi": {
        "capinfo": {
-        "dsss": true
+        "akm": [
+         "PSK"
+        ],
+        "dsss": true,
+        "pmf": "off"
        },
        "rsn": true,
        "sig": "1,48,221:00:50:f2:1",
@@ -554,14 +579,19 @@
          "CCMP"
         ],
         "pmf": "off"
-       }
+       },
+       "width": 40
       }
      },
      "fp": {
       "src": "beacon",
       "wifi": {
        "capinfo": {
-        "dsss": false
+        "akm": [
+         "PSK"
+        ],
+        "dsss": false,
+        "pmf": "off"
        },
        "rsn": true,
        "sig": "1,37,61,48"
@@ -610,14 +640,19 @@
          "CCMP"
         ],
         "pmf": "off"
-       }
+       },
+       "width": 40
       }
      },
      "fp": {
       "src": "beacon",
       "wifi": {
        "capinfo": {
-        "dsss": false
+        "akm": [
+         "PSK"
+        ],
+        "dsss": false,
+        "pmf": "off"
        },
        "rsn": true,
        "sig": "1,60,61,48"
@@ -669,7 +704,11 @@
       "src": "beacon",
       "wifi": {
        "capinfo": {
-        "dsss": false
+        "akm": [
+         "SAE"
+        ],
+        "dsss": false,
+        "pmf": "required"
        },
        "gen": 6,
        "he": true,
@@ -724,7 +763,11 @@
       "src": "beacon",
       "wifi": {
        "capinfo": {
-        "dsss": false
+        "akm": [
+         "SAE"
+        ],
+        "dsss": false,
+        "pmf": "required"
        },
        "rsn": true,
        "sig": "1,48"
@@ -817,6 +860,7 @@
         ],
         "pmf": "off"
        },
+       "width": 40,
        "wps_configured": false,
        "wps_locked": true
       }
@@ -825,7 +869,11 @@
       "src": "beacon",
       "wifi": {
        "capinfo": {
-        "dsss": false
+        "akm": [
+         "802.1X-SHA256"
+        ],
+        "dsss": false,
+        "pmf": "off"
        },
        "rsn": true,
        "sig": "1,61,48,114,107,71,221:00:0b:86:1,221:00:50:f2:4",
@@ -992,14 +1040,19 @@
          "CCMP"
         ],
         "pmf": "off"
-       }
+       },
+       "width": 40
       }
      },
      "fp": {
       "src": "beacon",
       "wifi": {
        "capinfo": {
-        "dsss": false
+        "akm": [
+         "PSK"
+        ],
+        "dsss": false,
+        "pmf": "off"
        },
        "rsn": true,
        "sig": "1,61,48"
@@ -1219,6 +1272,9 @@
       "src": "assoc",
       "wifi": {
        "capinfo": {
+        "akm": [
+         "PSK"
+        ],
         "caps": [
          "LDPC",
          "TX STBC",
@@ -1238,6 +1294,7 @@
         "chan_count": 22,
         "dsss": false,
         "extcap": "0400488001404040c00110",
+        "pmf": "off",
         "txp": [
          -5,
          20
@@ -1287,6 +1344,9 @@
       "src": "assoc",
       "wifi": {
        "capinfo": {
+        "akm": [
+         "PSK"
+        ],
         "caps": [
          "LDPC",
          "TX STBC",
@@ -1294,7 +1354,8 @@
          "RX STBC",
          "802.11r fast roaming"
         ],
-        "dsss": false
+        "dsss": false,
+        "pmf": "off"
        },
        "gen": 4,
        "ht": true,
@@ -1727,7 +1788,7 @@
   }
  ],
  "meta": {
-  "sniffowireless": "d8d4d03",
+  "sniffowireless": "0757fd0",
   "ts": 1700000000.0
  }
 }

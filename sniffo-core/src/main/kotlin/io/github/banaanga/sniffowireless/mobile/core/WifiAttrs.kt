@@ -165,6 +165,7 @@ object WifiAttrs {
     fun apAttributes(elts: List<Elt>, beaconTu: Int?, capability: Int?): MutableMap<String, Any> {
         val out = linkedMapOf<String, Any>("bsig" to beaconSignature(elts, capability, beaconTu))
         val roaming = ArrayList<String>()
+        val widths = ArrayList<Int>()
         for (e in elts) {
             val info = e.info
             when {
@@ -219,11 +220,24 @@ object WifiAttrs {
                         if (locked == true) out["wps_locked"] = true
                     }
                 }
+                // The channel width it announces (sniffowireless 35): HT (40), VHT (80 / 160), HE 6 GHz and EHT (up to 320)
+                e.id == 61 && info.size >= 2 -> if (u8(info, 1) and 0x03 in setOf(1, 3) && u8(info, 1) and 0x04 != 0) widths += 40
+                e.id == 192 && info.size >= 3 -> {
+                    val cw = u8(info, 0)
+                    val c0 = u8(info, 1)
+                    val c1 = u8(info, 2)
+                    if (cw == 1) widths += if (c1 != 0 && (Math.abs(c1 - c0) == 8 || Math.abs(c1 - c0) > 16)) 160 else 80
+                    else if (cw == 2 || cw == 3) widths += 160
+                }
                 e.id == 255 && info.isNotEmpty() -> {
                     val ext = u8(info, 0)
                     if (ext == 36 && info.size >= 5) {
                         val params = le32(info, 1)
                         if (params and 0x80000000L == 0L) out["bss_color"] = ((params shr 24) and 0x3F).toInt()
+                        val at = 7 + (if (params and (1L shl 14) != 0L) 3 else 0) + (if (params and (1L shl 15) != 0L) 1 else 0)
+                        if (params and (1L shl 17) != 0L && info.size >= at + 2) widths += listOf(20, 40, 80, 160)[u8(info, at + 1) and 0x03]
+                    } else if (ext == 106 && info.size >= 7 && u8(info, 1) and 0x01 != 0) {
+                        widths += listOf(20, 40, 80, 160, 320, 20, 20, 20)[u8(info, 6) and 0x07]
                     } else if (ext == 107) out["mlo"] = true
                 }
             }
@@ -235,6 +249,7 @@ object WifiAttrs {
         val basic = elts.filter { it.id == 1 || it.id == 50 }.flatMap { e -> e.info.map { it.toInt() and 0xFF } }
             .filter { it and 0x80 != 0 && (it and 0x7F) in 1..108 }.map { (it and 0x7F) / 2.0 }
         basic.minOrNull()?.let { out["basic_rate"] = it }
+        widths.maxOrNull()?.let { out["width"] = it }
         out["beacon_len"] = 40 + elts.sumOf { 2 + it.info.size }
         return out
     }
@@ -269,9 +284,15 @@ object WifiAttrs {
                 e.id == 36 && info.size >= 2 -> out["chan_count"] = (0 until info.size - 1 step 2).sumOf { u8(info, it + 1) }
                 e.id == 33 && info.size >= 2 -> out["txp"] = listOf(info[0].toInt(), info[1].toInt())
                 e.id == 59 && info.isNotEmpty() -> out["opcls"] = info.slice(0, 16).map { it.toInt() and 0xFF }
+                e.id == 48 -> parseRsn(info)?.let { r ->   // in an association request: the key management chosen, and PMF
+                    @Suppress("UNCHECKED_CAST")
+                    out["akm"] = (r["akm"] as List<Any>).take(4)
+                    out["pmf"] = r["pmf"]!!
+                }
             }
         }
         if (rates.isNotEmpty()) out["dsss"] = rates.any { it in LEGACY_RATES }
+        if (rates.isNotEmpty() && rates.all { it in LEGACY_RATES }) out["b_only"] = true
         val seen = caps.distinct()
         if (seen.isNotEmpty()) out["caps"] = seen
         return out
