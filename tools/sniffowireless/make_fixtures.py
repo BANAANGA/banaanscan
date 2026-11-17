@@ -29,7 +29,7 @@ sys.path.insert(0, src)
 from scapy.layers.dot11 import (Dot11, Dot11AssoReq, Dot11AssoResp, Dot11Auth, Dot11Beacon, Dot11Deauth,  # noqa: E402
                                 Dot11Disas, Dot11Elt, Dot11ProbeReq, Dot11ProbeResp, Dot11QoS, Dot11ReassoReq, RadioTap)
 
-from sniffowireless import bluetooth, config, lora_protocols, meshtastic, oui, wifi, zigbee_radio  # noqa: E402
+from sniffowireless import bluetooth, config, joins, linkstats, lora_protocols, meshtastic, oui, wifi, zigbee_radio  # noqa: E402
 from sniffowireless.lora import parse_rx  # noqa: E402
 
 TS = 1_700_000_000.0
@@ -247,6 +247,80 @@ def wifi_cases():
         rssi, freq = wifi._radio(pkt)
         out.append({"name": name, "frame": bytes(frame), "rssi": rssi, "freq": freq, "tuned": tuned, "obs": obs})
     return out
+
+
+# --------------------------------------------------------------------------------------------- connection steps (joins)
+CL, AP1, AP2 = "02:00:00:aa:00:01", "02:00:00:bb:00:01", "02:00:00:bb:00:02"
+RT_SIGNAL = struct.pack("<BBHI", 0, 0, 9, 1 << 5) + struct.pack("b", -61)   # radiotap with only the antenna signal
+
+
+def mac_b(m):
+    return bytes.fromhex(m.replace(":", ""))
+
+
+def raw_mgmt(sub, body, from_ap, ap=AP1, protected=False):
+    a1, a2 = (mac_b(CL), mac_b(ap)) if from_ap else (mac_b(ap), mac_b(CL))
+    return bytes([sub << 4, 0x40 if protected else 0, 0, 0]) + a1 + a2 + mac_b(ap) + b"\x10\x00" + body
+
+
+def raw_eapol(body, from_ap, etype=3, qos=True):
+    fc1 = 0x02 if from_ap else 0x01
+    a1, a2 = (mac_b(CL), mac_b(AP1)) if from_ap else (mac_b(AP1), mac_b(CL))
+    payload = joins.SNAP_EAPOL + bytes([2, etype]) + struct.pack(">H", len(body)) + body
+    return bytes([0x88 if qos else 0x08, fc1, 0, 0]) + a1 + a2 + mac_b(AP1) + b"\x20\x00" + (b"\x00\x00" if qos else b"") + payload
+
+
+def key(ki, from_ap):
+    return raw_eapol(bytes([2]) + struct.pack(">H", ki) + bytes(92), from_ap)
+
+
+def join_cases():
+    """joins.steps for the frames of a connection: the port has to find the same steps in the same frames."""
+    frames = [
+        ("auth open, client", raw_mgmt(11, struct.pack("<HHH", 0, 1, 0), False)),
+        ("auth open, ap", raw_mgmt(11, struct.pack("<HHH", 0, 2, 0), True)),
+        ("auth sae commit refused", raw_mgmt(11, struct.pack("<HHH", 3, 1, 77), True)),
+        ("auth ft", raw_mgmt(11, struct.pack("<HHH", 2, 1, 0), False, AP2)),
+        ("assoc req", raw_mgmt(0, struct.pack("<HH", 0x0411, 10) + b"\x00\x04Home", False)),
+        ("reassoc req", raw_mgmt(2, struct.pack("<HH", 0x0411, 10) + mac_b(AP1) + b"\x00\x04Home", False, AP2)),
+        ("assoc resp ok", raw_mgmt(1, struct.pack("<HHH", 0x0411, 0, 0xC001), True)),
+        ("assoc resp full", raw_mgmt(1, struct.pack("<HHH", 0x0411, 17, 0), True)),
+        ("reassoc resp", raw_mgmt(3, struct.pack("<HHH", 0x0411, 0, 0xC002), True, AP2)),
+        ("deauth from ap", raw_mgmt(12, struct.pack("<H", 15), True)),
+        ("disassoc from client", raw_mgmt(10, struct.pack("<H", 8), False)),
+        ("protected deauth", raw_mgmt(12, struct.pack("<H", 7), True, protected=True)),
+        ("btm request", raw_mgmt(13, bytes([10, 7, 1, 0x01, 0, 0, 0]), True)),
+        ("btm response", raw_mgmt(13, bytes([10, 8, 1, 0, 0]) + mac_b(AP2), False)),
+        ("neighbour report request", raw_mgmt(13, bytes([5, 4, 1]), False)),
+        ("beacon", raw_mgmt(8, bytes(12), True)),
+        ("m1", key(0x008A, True)), ("m2", key(0x010A, False)), ("m3", key(0x13CA, True)), ("m4", key(0x030A, False)),
+        ("group key m1", key(0x1382, True)),
+        ("m1 non-qos", raw_eapol(bytes([2]) + struct.pack(">H", 0x008A) + bytes(92), True, qos=False)),
+        ("eapol start", raw_eapol(b"", False, etype=1)),
+        ("eap request peap", raw_eapol(bytes([1, 3, 0, 6, 25, 0x20]), True, etype=0)),
+        ("eap success", raw_eapol(bytes([3, 4, 0, 4]), True, etype=0)),
+        ("eap failure", raw_eapol(bytes([4, 4, 0, 4]), True, etype=0)),
+        ("encrypted data", bytes([0x88, 0x41, 0, 0]) + mac_b(AP1) + mac_b(CL) + mac_b(AP1) + bytes(4) + bytes(40)),
+        ("too short", bytes([0xb0, 0, 0, 0])),
+    ]
+    return [{"name": n, "frame": f, "steps": joins.steps(RT_SIGNAL + f)} for n, f in frames]
+
+
+def link_cases():
+    """linkstats.LinkCounter over a run of frames at 24 Mb/s (a legacy rate in radiotap): which frames count, and how."""
+    rt24 = struct.pack("<BBHI", 0, 0, 10, (1 << 2) | (1 << 5)) + bytes([48]) + struct.pack("b", -58)
+    up = bytes([0x88, 0x41, 0, 0]) + mac_b(AP1) + mac_b(CL) + mac_b(AP1) + bytes(4) + bytes(30)
+    up_retry = bytes([0x88, 0x49, 0, 0]) + up[4:]
+    down = bytes([0x08, 0x42, 0, 0]) + mac_b(CL) + mac_b(AP1) + mac_b(AP1) + bytes(2) + bytes(30)
+    null = bytes([0xc8, 0x01, 0, 0]) + mac_b(AP1) + mac_b(CL) + mac_b(AP1) + bytes(4)
+    mcast = bytes([0x08, 0x42, 0, 0]) + mac_b("01:00:5e:00:00:01") + mac_b(AP1) + mac_b(AP1) + bytes(2) + bytes(30)
+    beacon_ = raw_mgmt(8, bytes(12), True)
+    frames = [up] * 5 + [up_retry] * 2 + [down] * 3 + [null, mcast, beacon_]
+    c = linkstats.LinkCounter()
+    for f in frames:
+        c.feed(rt24 + f)
+    obs = sorted(c.drain(TS), key=lambda o: o["dir"])
+    return {"rate": 24.0, "rssi": -58, "frames": frames, "obs": obs}
 
 
 # --------------------------------------------------------------------------------------------------------- Bluetooth
@@ -566,6 +640,8 @@ def main():
     write("zigbee.json", {"meta": meta, **zigbee_cases()})
     write("channels.json", {"meta": meta, **channel_cases()})
     write("lora.json", {"meta": meta, **lora_cases()})
+    write("joins.json", {"meta": meta, "cases": join_cases()})
+    write("link.json", {"meta": meta, **link_cases()})
     companies = {f"{k:04x}": v for k, v in sorted(oui._COMPANIES.items())}
     with open(os.path.join(RES, "bt_companies.json"), "w", encoding="utf-8") as f:
         json.dump({"source": f"sniffowireless {git_rev()} (Bluetooth SIG assigned numbers, with its short names)",

@@ -20,11 +20,15 @@ import io.github.banaanga.sniffowireless.mobile.mt7921u.Mt7921Exception
 import io.github.banaanga.sniffowireless.mobile.mt7921u.Mt7921u
 import io.github.banaanga.sniffowireless.mobile.mt7921u.PatchFile
 import io.github.banaanga.sniffowireless.mobile.mt7921u.RamFile
+import io.github.banaanga.sniffowireless.mobile.mt7921u.RxPhy
 import io.github.banaanga.sniffowireless.mobile.mt7921u.UsbIo
 import io.github.banaanga.sniffowireless.mobile.core.Recorder
 import io.github.banaanga.sniffowireless.mobile.core.AttrGates
 import io.github.banaanga.sniffowireless.mobile.core.Channels
 import io.github.banaanga.sniffowireless.mobile.core.Gate
+import io.github.banaanga.sniffowireless.mobile.core.JoinWatcher
+import io.github.banaanga.sniffowireless.mobile.core.LinkCounter
+import io.github.banaanga.sniffowireless.mobile.core.PhyRates
 import io.github.banaanga.sniffowireless.mobile.core.WifiFrames
 import io.github.banaanga.sniffowireless.mobile.sensor.Hub
 import kotlinx.coroutines.CancellationException
@@ -241,6 +245,8 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
                 "hw_maker" to device.manufacturerName, "hw_product" to device.productName, "firmware" to info.firmware.toString().take(64))
             val fpGate = Gate()
             val gates = AttrGates()
+            val links = LinkCounter()      // rates, MCS and retries of every client's data frames (the server's link quality)
+            val joins = JoinWatcher()      // the steps of every client's connections (the server's troubleshooter and roams)
             val pcap = File(firmwareDir, "capture.pcap")
             PcapWriter(pcap).use { writer ->
                 val collector = Collector()
@@ -292,7 +298,13 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
                         Channels.bandOf(WifiFrames.radioFreq(f.freqMhz, freq))?.let { bandFrames[it] = (bandFrames[it] ?: 0) + 1 }
                         if (sensor != null && sensor.sending) {
                             for (o in WifiFrames.parse(f.data, f.rssi, f.freqMhz, freq, sensor.now(), fpGate, gates)) sensor.sink.put(o)
+                            for (o in joins.feed(f.data, f.rssi, sensor.now())) sensor.sink.put(o)
+                            val (rate, mcs) = rateOf(f.phy)
+                            links.feed(f.data, rate, mcs, f.rssi)
                         }
+                    }
+                    if (sensor != null && sensor.sending && links.due(sensor.now())) {
+                        for (o in links.drain(sensor.now())) sensor.sink.put(o)
                     }
                     if (sensor != null && sensor.sending) {
                         sensor.sink.put(linkedMapOf("t" to "chan", "ts" to sensor.now(), "mac" to "-", "freq" to freq,
@@ -390,4 +402,17 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
         const val STATUS = "wifi:$IFACE"
         private val FIRMWARE = listOf("WIFI_MT7961_patch_mcu_1_2_hdr.bin", "WIFI_RAM_CODE_MT7961_1.bin")
     }
+}
+
+/** Mb/s and the server's MCS label ("HE MCS 7 2SS 80") of a frame, from what the chip says about how it was sent. */
+internal fun rateOf(phy: RxPhy?): Pair<Double?, String?> {
+    if (phy == null) return null to null
+    phy.legacyMbps?.let { return it to null }
+    val got = when {
+        phy.isHt -> PhyRates.ht(phy.mcs, phy.width, phy.gi == 1)
+        phy.isVht -> PhyRates.vht(phy.mcs, phy.nss, phy.width, phy.gi == 1)
+        phy.isHe -> PhyRates.he(phy.mcs, phy.nss, phy.width, phy.gi)
+        else -> null
+    }
+    return (got?.first) to (got?.second)
 }

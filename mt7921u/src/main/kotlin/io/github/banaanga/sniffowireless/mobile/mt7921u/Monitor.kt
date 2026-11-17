@@ -6,7 +6,41 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 /** One received 802.11 frame, without its checksum. */
-class RxFrame(val freqMhz: Int, val rssi: Int?, val fcsError: Boolean, val data: ByteArray)
+class RxFrame(val freqMhz: Int, val rssi: Int?, val fcsError: Boolean, val data: ByteArray, val phy: RxPhy? = null)
+
+/**
+ * How a frame was sent, from the first word of the descriptor's P-RXV (group 3), with the fields Linux's mt76 reads in
+ * mt76_connac2_mac_fill_rx_rate: PHY [mode] (0 CCK, 1 OFDM, 2 HT, 3 HT greenfield, 4 VHT, 8-11 HE), rate [index], spatial
+ * streams, channel [width] in MHz and guard interval ([gi]: HT/VHT 1 = short; HE 0/1/2 = 0.8/1.6/3.2 µs).
+ */
+class RxPhy(val mode: Int, val index: Int, val nss: Int, val width: Int, val gi: Int) {
+    val isHt get() = mode == 2 || mode == 3
+    val isVht get() = mode == 4
+    val isHe get() = mode in 8..11
+
+    /** Mb/s of a CCK or OFDM frame, null for the others (their rate depends on MCS, streams and width). */
+    val legacyMbps: Double?
+        get() = when (mode) {
+            0 -> doubleArrayOf(1.0, 2.0, 5.5, 11.0).getOrNull(index and 0x3)
+            1 -> OFDM[index and 0xF]
+            else -> null
+        }
+
+    /** The MCS: HT counts 0-31 (the streams are in it), VHT and HE 0-11/13. */
+    val mcs get() = if (isHt) index and 0x1F else index and 0xF
+
+    companion object {
+        private val OFDM = mapOf(0xB to 6.0, 0xF to 9.0, 0xA to 12.0, 0xE to 18.0, 0x9 to 24.0, 0xD to 36.0, 0x8 to 48.0, 0xC to 54.0)
+
+        fun fromRxv(v0: Int): RxPhy {
+            var nss = ((v0 ushr 7) and 0x7) + 1                       // MT_PRXV_NSTS: space-time streams
+            val stbc = (v0 ushr 22) and 0x3                            // MT_PRXV_HT_STBC: STBC sends each stream twice
+            if (stbc != 0 && nss > 1) nss /= 2
+            val width = when ((v0 ushr 12) and 0x7) { 1 -> 40; 2 -> 80; 3 -> 160; else -> 20 }   // MT_PRXV_FRAME_MODE
+            return RxPhy(mode = (v0 ushr 24) and 0xF, index = v0 and 0x7F, nss = nss, width = width, gi = (v0 ushr 15) and 0x3)
+        }
+    }
+}
 
 /** A channel the sniffer can tune to, 20 MHz wide. */
 data class Channel(val band: Band, val number: Int) {
@@ -59,8 +93,10 @@ object RxDescriptor {
         if (rxd1 and GROUP_1 != 0) at += 16
         if (rxd1 and GROUP_2 != 0) at += 8
         var rcpi: Int? = null
+        var phy: RxPhy? = null
         if (rxd1 and GROUP_3 != 0) {
             if (at + 8 > size) return null
+            phy = RxPhy.fromRxv(b.getInt(at))
             rcpi = b.getInt(at + 4)
             at += 8
             if (rxd1 and GROUP_5 != 0) {
@@ -78,6 +114,7 @@ object RxDescriptor {
             rssi = rcpi?.let(::strongestSignal),
             fcsError = rxd1 and FCS_ERR != 0,
             data = buffer.copyOfRange(headerGap, size),
+            phy = phy,
         )
     }
 

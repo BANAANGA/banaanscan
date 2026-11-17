@@ -53,6 +53,15 @@ The phone then works like one of sniffowireless's remote sensors:
 * **Live frames:** on the server, **Frames → Live → Radios of** this phone shows what its USB adapters receive as it
   arrives. The same radios as frame recording can be shown. The phone sends the frames with its uploads, every 2 seconds and
   at most 3,000 at a time, and stops when the server stops asking. Needs sniffowireless 33.3 or newer.
+* **Wi-Fi analysis (sniffowireless 34):** from what the MT7921U receives, the phone also sends what the server's Wi-Fi
+  analysis needs:
+  * *link quality*: every client's data frames per direction and minute, with retries and the rate and MCS they went at.
+    The MT7921U's receive descriptor gives the PHY mode, rate index, streams, width and guard interval.
+  * *connection steps*: authentication, association, EAP, the 4-way handshake, deauthentications, 802.11v/k, for the
+    troubleshooter and the roam timeline. Only the step, the addresses and the codes are sent, nothing of the keys.
+  * *beacon rate and size* of every access point, for the beacon overhead per channel.
+
+  The phone's own Wi-Fi scan has none of these.
 * **Keeps running:** a foreground service with a notification keeps capturing and sending with the screen off. Uploads
   go every 2 seconds; when the server can't be reached they are kept (up to 50,000 observations) and sent later.
 
