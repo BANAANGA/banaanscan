@@ -13,6 +13,7 @@ class LinkCounter {
     private class Entry(val bssid: String) {
         var frames = 0
         var retries = 0
+        var bytes = 0L
         var rssiSum = 0L
         var rssiN = 0
         val rates = LinkedHashMap<String, Int>()
@@ -46,6 +47,7 @@ class LinkCounter {
             Entry(mac(f, bssidAt)).also { links[key] = it }
         }
         e.frames++
+        e.bytes += f.size   // for the airtime it took (sniffowireless 35)
         if (fc1 and 0x08 != 0) e.retries++
         if (rate != null && rate > 0) {
             val k = rateKey(rate)
@@ -66,7 +68,7 @@ class LinkCounter {
         last = now
         val out = links.map { (k, e) ->
             linkedMapOf<String, Any?>("t" to "link", "ts" to now, "mac" to k.first, "dir" to k.second, "bssid" to e.bssid, "frames" to e.frames,
-                "retries" to e.retries, "rates" to LinkedHashMap(e.rates), "mcs" to LinkedHashMap(e.mcs), "rssi_sum" to e.rssiSum, "rssi_n" to e.rssiN)
+                "retries" to e.retries, "bytes" to e.bytes, "rates" to LinkedHashMap(e.rates), "mcs" to LinkedHashMap(e.mcs), "rssi_sum" to e.rssiSum, "rssi_n" to e.rssiN)
         }
         links.clear()
         return out

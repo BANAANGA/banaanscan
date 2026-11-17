@@ -50,6 +50,8 @@ The phone then works like one of sniffowireless's remote sensors:
   events, Zigbee frames and LoRa frames. The phone sends the file to the server when it is done and deletes it here. It
   then opens in the server's **Frames** page. The phone's own Wi-Fi and Bluetooth can't be recorded, because Android only
   passes on what it already decoded, not the frames. Needs sniffowireless 33.2 or newer.
+* **Automatic recording:** when the server's **Record automatically** includes this phone, the phone keeps the last seconds of
+  what its USB adapters receive in memory, so a recording an event starts also holds what led up to it. Needs sniffowireless 35.
 * **Live frames:** on the server, **Frames → Live → Radios of** this phone shows what its USB adapters receive as it
   arrives. The same radios as frame recording can be shown. The phone sends the frames with its uploads, every 2 seconds and
   at most 3,000 at a time, and stops when the server stops asking. Needs sniffowireless 33.3 or newer.
@@ -60,6 +62,8 @@ The phone then works like one of sniffowireless's remote sensors:
   * *connection steps*: authentication, association, EAP, the 4-way handshake, deauthentications, 802.11v/k, for the
     troubleshooter and the roam timeline. Only the step, the addresses and the codes are sent, nothing of the keys.
   * *beacon rate and size* of every access point, for the beacon overhead per channel.
+  * *sniffowireless 35:* the channel width each access point announces (BSS colours and widths), the bytes of every
+    client's data frames (who uses the airtime), and the key management and PMF a client chose (client readiness).
 
   The phone's own Wi-Fi scan has none of these.
 * **Keeps running:** a foreground service with a notification keeps capturing and sending with the screen off. Uploads

@@ -219,6 +219,8 @@ class Forwarder(
     var capture: RemoteCapture? = null
     /** Live frames for the server's Frames page: sent with every upload while the server asks for them. */
     var live: LiveTap? = null
+    /** The last seconds of frames, for the server's automatic recording (set to the recorder's [Recorder.pre]). */
+    var pre: PreBuffer? = null
 
     val pending: Int @Synchronized get() = buf.size
 
@@ -275,6 +277,7 @@ class Forwarder(
         parsed["zigbee_config"]?.let { onZigbeeConfig?.invoke(it) }
         parsed["lora_config"]?.let { onLoraConfig?.invoke(it) }
         live?.applyRemote(parsed["live"])
+        pre?.applyRemote(parsed["arm"])
         val commands = (parsed["commands"] as? List<*>).orEmpty().filterIsInstance<Map<*, *>>()
         commands.filter { it["action"] == "capture" }.forEach { cmd ->
             capture?.handle(cmd) ?: logs.add("INFO", "sniffowireless.sensors", "The server asked for a recording, which this phone cannot make")

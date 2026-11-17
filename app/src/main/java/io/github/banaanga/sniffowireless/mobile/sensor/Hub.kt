@@ -162,6 +162,7 @@ class Hub(private val app: Application) {
         forwarder.onLoraConfig = loraControl::applyRemote
         forwarder.capture = remoteCapture
         forwarder.live = recorder.live
+        forwarder.pre = recorder.pre
     }
 
     fun setSending(on: Boolean) {

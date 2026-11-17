@@ -22,7 +22,9 @@ class Recorder(private val clock: () -> Long = System::currentTimeMillis) {
         private set
     /** Live frames for the server's Frames page: the sources hand frames over while it or a recording wants them ([tapping]). */
     val live = LiveTap(clock)
-    val tapping: Boolean get() = active || live.active
+    /** The last seconds of frames, while the server's automatic recording includes this phone (sniffowireless 35). */
+    val pre = PreBuffer(clock)
+    val tapping: Boolean get() = active || live.active || pre.active
     @Volatile var file: File? = null
         private set
     @Volatile var frames = 0
@@ -33,9 +35,10 @@ class Recorder(private val clock: () -> Long = System::currentTimeMillis) {
     private var out: OutputStreamWriter? = null
     private var size = 0L
 
-    /** Starts a recording of [radios] for [seconds] into [dir]; throws IllegalStateException while one runs. */
+    /** Starts a recording of [radios] for [seconds] into [dir], beginning with [before] (frames from [pre]); throws
+     *  IllegalStateException while one runs. */
     @Synchronized
-    fun start(dir: File, seconds: Int, radios: Collection<String>): File {
+    fun start(dir: File, seconds: Int, radios: Collection<String>, before: List<Map<String, Any?>> = emptyList()): File {
         check(!active) { "A recording is already running" }
         dir.mkdirs()
         val now = clock()
@@ -46,6 +49,14 @@ class Recorder(private val clock: () -> Long = System::currentTimeMillis) {
         until = now + seconds.coerceIn(1, MAX_SECONDS) * 1000L
         frames = 0
         size = 0
+        for (frame in before) {
+            if (frame["radio"] !in this.radios) continue
+            val line = Json.encode(frame)
+            out!!.write(line)
+            out!!.write("\n")
+            frames++
+            size += line.length + 1
+        }
         active = true
         return f
     }
@@ -53,6 +64,7 @@ class Recorder(private val clock: () -> Long = System::currentTimeMillis) {
     /** Called by the sources for every frame; does nothing (and costs nothing) unless a recording of that radio runs. */
     fun record(radio: String, src: String, raw: ByteArray, meta: Map<String, Any?> = emptyMap()) {
         live.record(radio, src, raw, meta)
+        pre.record(radio, src, raw, meta)
         if (!active || radio !in radios) return
         val bytes = if (radio == "wifi") trimWifi(raw) else raw
         val line = Json.encode(linkedMapOf<String, Any?>("ts" to clock() / 1000.0, "radio" to radio, "src" to src, "raw" to hex(bytes)) + meta)
@@ -72,9 +84,9 @@ class Recorder(private val clock: () -> Long = System::currentTimeMillis) {
     @Synchronized
     fun stop(): File? {
         if (!active) return null
-        active = false
-        runCatching { out?.close() }
+        runCatching { out?.close() }   // closed before [active] turns false: whoever waits for that may read the file at once
         out = null
+        active = false
         return file
     }
 
@@ -163,13 +175,15 @@ class RemoteCapture(
         val seconds = (cmd["seconds"] as? Number)?.toInt()?.coerceIn(1, Recorder.MAX_SECONDS) ?: 60
         val radios = (cmd["radios"] as? List<*>)?.filterIsInstance<String>()?.filter { it in Recorder.RADIOS }?.takeIf { it.isNotEmpty() }
             ?: Recorder.RADIOS.toList()
-        Thread({ run(id, seconds, radios) }, "capture-for-server").apply { isDaemon = true }.start()
+        val pre = (cmd["pre"] as? Number)?.toInt()?.takeIf { it in 1..120 } ?: 0   // started by an event: the seconds before it too
+        Thread({ run(id, seconds, radios, pre) }, "capture-for-server").apply { isDaemon = true }.start()
     }
 
-    private fun run(id: String, seconds: Int, radios: List<String>) {
+    private fun run(id: String, seconds: Int, radios: List<String>, pre: Int = 0) {
         job = mapOf("id" to id, "state" to "recording", "frames" to 0)
         try {
-            val file = recorder.start(dir, seconds, radios)
+            val before = if (pre > 0) recorder.pre.last(pre) else emptyList()
+            val file = recorder.start(dir, seconds, radios, before)
             log("INFO", "Recording ${radios.joinToString(", ")} for ${seconds}s for the server")
             while (recorder.active && recorder.file == file) {
                 recorder.tick()
@@ -198,6 +212,72 @@ class RemoteCapture(
     }
 }
 
+
+/**
+ * The last seconds of frames, as sniffowireless's capture.PREBUF keeps them on a Raspberry Pi sensor: while the server's answers
+ * to the uploads say so ({"arm": {"radios", "seconds"}}), so that a recording its automatic recording asks for (with "pre")
+ * starts with what led up to the event. It lets go a minute after the server stops saying so.
+ */
+class PreBuffer(private val clock: () -> Long = System::currentTimeMillis) {
+    @Volatile var radios: Set<String> = emptySet()
+        private set
+    @Volatile var seconds = 0
+        private set
+    @Volatile var until = 0L
+        private set
+    private val buf = ArrayDeque<Map<String, Any?>>()
+
+    val active: Boolean get() = radios.isNotEmpty() && clock() < until
+    val size: Int @Synchronized get() = buf.size
+
+    @Synchronized
+    fun arm(radios: Collection<String>, seconds: Int, holdMs: Long = HOLD_MS) {
+        this.radios = radios.filter { it in Recorder.RADIOS }.toSet()
+        this.seconds = seconds.coerceIn(0, MAX_SECONDS)
+        until = clock() + holdMs
+        if (this.radios.isEmpty()) buf.clear()
+    }
+
+    @Synchronized
+    fun disarm() {
+        radios = emptySet()
+        until = 0
+        buf.clear()
+    }
+
+    fun record(radio: String, src: String, raw: ByteArray, meta: Map<String, Any?>) {
+        if (!active || radio !in radios) return
+        val now = clock()
+        val bytes = if (radio == "wifi") Recorder.trimWifi(raw) else raw
+        val frame = linkedMapOf<String, Any?>("ts" to now / 1000.0, "radio" to radio, "src" to src, "raw" to Recorder.hex(bytes)) + meta
+        synchronized(this) {
+            if (buf.size >= MAX) buf.removeFirst()
+            buf.addLast(frame)
+            while (buf.isNotEmpty() && (buf.first()["ts"] as Double) < now / 1000.0 - seconds) buf.removeFirst()
+        }
+    }
+
+    /** The frames of the last [seconds], oldest first. */
+    fun last(seconds: Int): List<Map<String, Any?>> = since(clock() / 1000.0 - seconds)
+
+    /** The frames from [ts] (seconds) on, oldest first. */
+    @Synchronized
+    fun since(ts: Double): List<Map<String, Any?>> = buf.filter { (it["ts"] as Double) >= ts }
+
+    /** Applies what the server's answer says: {"radios", "seconds"} to keep them, nothing to let go. */
+    fun applyRemote(conf: Any?) {
+        val m = conf as? Map<*, *>
+        val radios = m?.get("radios") as? List<*>
+        if (m != null && radios != null) arm(radios.filterIsInstance<String>(), (m["seconds"] as? Number)?.toInt() ?: 30)
+        else if (this.radios.isNotEmpty()) disarm()
+    }
+
+    companion object {
+        const val HOLD_MS = 60_000L   // let go a minute after the server stopped asking
+        const val MAX_SECONDS = 120
+        const val MAX = 100_000       // frames at most (capture.PreBuffer.MAX)
+    }
+}
 
 /**
  * Live frames for the server's Frames page (Frames → Live → Radios of this phone), as sniffowireless's capture.LiveTap does on a
