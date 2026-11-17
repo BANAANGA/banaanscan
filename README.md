@@ -184,7 +184,8 @@ the phone. The firmware has no transmit code: the board only listens.
   unreadable. Turn **Read the public Meshtastic channel** off to see only the headers.
 * **AR9271:** tested on a PC through the prototype with an AR9271 "UB91": it hears the same networks as Linux's driver on
 channels 1, 6 and 11, and its register traffic matches a trace of Linux's (see [tools/ath9k](tools/ath9k/README.md)).
-Not yet run on a phone.
+On a Galaxy S10 (Android 12, through a USB hub): firmware loaded and listening in under a second, 22 networks in the
+first 25 seconds of hopping.
 
 **Sensor mode:** turn on **LoRa board** on the Sensor page. The phone sends the raw frames (`lora_frame`) and the
   board's state; the server recognises and stores them as it does for its own boards, and the profiles set for this

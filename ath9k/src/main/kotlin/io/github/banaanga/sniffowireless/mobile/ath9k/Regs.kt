@@ -91,7 +91,7 @@ class WmiRegs(private val htc: Htc, private val trace: ((String) -> Unit)? = nul
         if (us >= 1000) Thread.sleep(us / 1000L, (us % 1000) * 1000)
         else {
             val end = System.nanoTime() + us * 1000L
-            while (System.nanoTime() < end) Thread.onSpinWait()
+            while (System.nanoTime() < end) Thread.yield()  // (Thread.onSpinWait isn't in Android before 14)
         }
     }
 

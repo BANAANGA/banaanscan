@@ -265,8 +265,9 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
         } catch (e: CancellationException) {
             note("Stopped")
             throw e
-        } catch (e: Exception) {
-            note("Failed: ${e.message}")
+        } catch (e: Throwable) {
+            // Errors too (a driver problem must show as an error here, not take the app down)
+            note("Failed: ${e.message ?: e.javaClass.simpleName}")
             error.value = e.message ?: e.toString()
         } finally {
             running.value = false

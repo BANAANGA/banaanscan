@@ -40,7 +40,11 @@ class Ath9kHtc(private val usb: UsbIo, private val log: (String) -> Unit = {}, r
             // Left running by a session that didn't end cleanly: back into the boot ROM first, as Linux does on disconnect.
             log("The adapter's firmware is still running from an earlier session; restarting it")
             htc.reboot()
-            Thread.sleep(1500)
+            // Wait for the boot ROM: its descriptor no longer carries the firmware's 0xffff (Linux waits seconds here too).
+            val end = System.currentTimeMillis() + 5000
+            do Thread.sleep(250) while (htc.firmwareRunning() && System.currentTimeMillis() < end)
+            Thread.sleep(250)
+            if (htc.firmwareRunning()) throw Ath9kException("The adapter didn't restart; unplug it and plug it in again")
         }
         log("Loading firmware (%d bytes)".format(firmware.size))
         htc.downloadFirmware(firmware)
