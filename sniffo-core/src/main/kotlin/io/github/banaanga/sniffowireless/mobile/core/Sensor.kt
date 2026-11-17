@@ -68,7 +68,7 @@ class LogBuffer(private val capacity: Int = 2000) {
  * channels.WifiControl applies them on a remote sensor: a revision that is new and valid replaces the override; an
  * invalid one is refused once. [iface] is the name the adapter is reported under, for per-adapter lists.
  */
-class WifiControl(private val iface: String, private val log: (String, String) -> Unit = { _, _ -> }) {
+class WifiControl(@Volatile var iface: String, private val log: (String, String) -> Unit = { _, _ -> }) {
     data class Plan(val channels: List<Int>, val hopInterval: Double?, val regdomain: String?)
 
     @Volatile var rev = 0

@@ -17,4 +17,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "sniffowireless-mobile"
-include(":app", ":mt7921u", ":mt7921u-pc", ":bthci", ":bthci-pc", ":sniffo-core")
+include(":app", ":mt7921u", ":mt7921u-pc", ":ath9k", ":ath9k-pc", ":bthci", ":bthci-pc", ":sniffo-core")

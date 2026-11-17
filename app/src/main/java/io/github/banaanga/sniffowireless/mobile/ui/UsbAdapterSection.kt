@@ -15,13 +15,14 @@ import io.github.banaanga.sniffowireless.mobile.MainViewModel
 import io.github.banaanga.sniffowireless.mobile.mt7921u.Channel
 import io.github.banaanga.sniffowireless.mobile.wifimon.ChannelPlan
 
-/** Wi-Fi monitor mode through an MT7921U USB adapter, driven by sniffowireless-mobile's own driver. */
+/** Wi-Fi monitor mode through an MT7921U or AR9271 USB adapter, driven by sniffowireless-mobile's own drivers. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun UsbAdapterSection(vm: MainViewModel) {
     val mon = vm.wifiMonitor
     val p = Sniffo.c
     val adapter by mon.adapter.collectAsStateWithLifecycle()
+    val kind by mon.kind.collectAsStateWithLifecycle()
     val firmware by mon.firmwarePresent.collectAsStateWithLifecycle()
     val running by mon.running.collectAsStateWithLifecycle()
     val status by mon.status.collectAsStateWithLifecycle()
@@ -46,10 +47,11 @@ fun UsbAdapterSection(vm: MainViewModel) {
                     }
                 },
             ) {
-                StatusLine(if (adapter != null) "MediaTek MT7921U connected" else "No adapter plugged in",
+                StatusLine(if (adapter != null) "${kind?.label ?: "Adapter"} connected" else "No adapter plugged in",
                     if (adapter != null) Tone.ON else Tone.NONE, Modifier)
                 Muted(
-                    if (adapter == null) "Connect an MT7921U adapter (BrosTrend AX9L, Alfa AWUS036AXML…) with a USB-C cable or OTG adapter. Monitor mode runs on sniffowireless-mobile's own driver, without root."
+                    if (adapter == null) "Connect an MT7921U adapter (BrosTrend AX9L, Alfa AWUS036AXML…) or an AR9271 one (2.4 GHz only: Alfa AWUS036NHA, TP-Link TL-WN722N v1…) with a USB-C cable or OTG adapter. Monitor mode runs on sniffowireless-mobile's own drivers, without root."
+                    else if (kind == io.github.banaanga.sniffowireless.mobile.wifimon.AdapterKind.AR9271) "Listens only: nothing is transmitted. 2.4 GHz only; other bands in the plan are skipped."
                     else if (!firmware) "Firmware missing from this build: run tools/mt7921u/push-firmware.sh on your computer once."
                     else "Listens only: nothing is transmitted.",
                     Modifier.padding(top = 4.dp),

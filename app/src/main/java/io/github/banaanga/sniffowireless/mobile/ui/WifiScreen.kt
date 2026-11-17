@@ -31,7 +31,7 @@ fun SourceSeg(usb: Boolean, onChange: (Boolean) -> Unit) {
 
 @Composable
 fun WifiScreen(vm: MainViewModel) {
-    // The phone's own Wi-Fi can only scan; an MT7921U adapter adds real monitor mode.
+    // The phone's own Wi-Fi can only scan; an MT7921U or AR9271 adapter adds real monitor mode.
     var usbAdapter by rememberSaveable { mutableStateOf(false) }
     Column {
         SourceSeg(usbAdapter) { usbAdapter = it }

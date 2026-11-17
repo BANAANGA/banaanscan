@@ -34,7 +34,7 @@ The phone then works like one of sniffowireless's remote sensors:
   fingerprints, access point details, BLE identification fields and Zigbee radio summaries. The port is tested against
   fixtures that sniffowireless's Python produces (see [tools/sniffowireless](tools/sniffowireless/README.md)).
 * **Sources:** the phone's own Wi-Fi scan (access points; with Android 11+ including their information elements) and
-  Bluetooth, an MT7921U in monitor mode (access points, clients, probe requests, deauths, channel survey), a USB
+  Bluetooth, an MT7921U or AR9271 in monitor mode (access points, clients, probe requests, deauths, channel survey), a USB
   Bluetooth adapter (every advert, long range, classic inquiry), a Zigbee stick (network scans, energy, and
   listening with an EZSP stick that has `mfglib`), and a LoRa board with sniffowireless's lora-sniffer firmware (raw
   frames, which the server recognises as Meshtastic, MeshCore, LoRaWAN or LoRa APRS, as it does for its own boards).
@@ -123,6 +123,11 @@ sniffowireless-mobile can drive two kinds of USB adapter itself, without root, t
   * BrosTrend AXE3000 Linux WiFi, model AX9L (tested)
   * Alfa AWUS036AXML
   * Any other adapter with the MT7921U / MT7921AUN chip that shows up as `0e8d:7961`
+* **Wi-Fi monitor mode** with an Atheros AR9271 adapter (USB ID `0cf3:9271` and the other ids Linux's ath9k_htc knows):
+  the same, on 2.4 GHz only (it is a 2.4 GHz, single-stream chip; other bands in the channel plan are skipped). Its
+  open-source firmware (`htc_9271-1.4.0`) is bundled. See [tools/ath9k](tools/ath9k/README.md). Compatible adapters:
+  * Atheros AR9271 "UB91" (`0cf3:9271`, tested)
+  * Alfa AWUS036NHA, TP-Link TL-WN722N version 1 (not v2/v3), and other AR9271 adapters
 * **Bluetooth** with a USB Bluetooth adapter, tested with the TP-Link UB500 Plus (Realtek RTL8761BU, `2357:0604`).
   Compared with the phone's own Bluetooth it reports every advertising packet without Android's filtering, hears
   long-range (Coded PHY) devices, knows whether an address is public or random, and has a **Listen only** mode that
@@ -177,7 +182,11 @@ the phone. The firmware has no transmit code: the board only listens.
   SNR. For Meshtastic, the public default channel (whose key Meshtastic publishes) is read like sniffowireless reads
   it: node names, hardware, roles, positions, telemetry and text messages. Private channels and direct messages stay
   unreadable. Turn **Read the public Meshtastic channel** off to see only the headers.
-* **Sensor mode:** turn on **LoRa board** on the Sensor page. The phone sends the raw frames (`lora_frame`) and the
+* **AR9271:** tested on a PC through the prototype with an AR9271 "UB91": it hears the same networks as Linux's driver on
+channels 1, 6 and 11, and its register traffic matches a trace of Linux's (see [tools/ath9k](tools/ath9k/README.md)).
+Not yet run on a phone.
+
+**Sensor mode:** turn on **LoRa board** on the Sensor page. The phone sends the raw frames (`lora_frame`) and the
   board's state; the server recognises and stores them as it does for its own boards, and the profiles set for this
   sensor under **Settings → LoRa** replace the phone's own list. A firmware update from the server isn't supported on the
   phone: flash from the web interface instead.
@@ -229,7 +238,7 @@ private storage. **Devices → Vendor database → Update** refreshes it. To wor
   the sniffowireless server you set.
 * For Zigbee: a supported USB stick, plus a phone with USB-OTG host support. Android asks for permission
   the first time you scan with a stick.
-* For the USB adapter modes: an MT7921U Wi-Fi adapter or a USB Bluetooth adapter, and USB-OTG host support.
+* For the USB adapter modes: an MT7921U or AR9271 Wi-Fi adapter or a USB Bluetooth adapter, and USB-OTG host support.
 
 ## Install with Obtainium
 
@@ -322,7 +331,7 @@ app/src/main/java/io/github/banaanga/sniffowireless/mobile/
 ├── MainActivity.kt / MainViewModel.kt   app shell, permissions, theme, state
 ├── scan/       WifiScanner, BluetoothScanner, LanScanner, MdnsScanner, SsdpScanner, NetBios, Probes
 ├── zigbee/     USB scanner, dongle detection, Z-Stack and EZSP drivers
-├── wifimon/    Wi-Fi monitor mode through an MT7921U
+├── wifimon/    Wi-Fi monitor mode through an MT7921U or AR9271
 ├── btusb/      Bluetooth through a USB adapter
 ├── lora/       LoRa through a board with the lora-sniffer firmware
 ├── sensor/     sensor mode: the shared Hub, SensorService (foreground service), settings
@@ -330,6 +339,7 @@ app/src/main/java/io/github/banaanga/sniffowireless/mobile/
 ├── data/       models, OuiDatabase (MAC vendors), DeviceIndex (saved devices)
 └── ui/         one screen per page + shared sniffowireless-style components (Common.kt)
 mt7921u/        MT7921U driver (plain Kotlin), mt7921u-pc/ its PC prototype
+ath9k/          AR9271 driver, ported from Linux's ath9k_htc (plain Kotlin), ath9k-pc/ its PC prototype
 bthci/          Bluetooth HCI over USB + Realtek firmware loader (plain Kotlin), bthci-pc/ its PC prototype
 sniffo-core/    sniffowireless's observation formats, LoRa classifier and Meshtastic decoder ported to Kotlin, the
                 lora-sniffer driver, and the upload to its server (plain Kotlin)

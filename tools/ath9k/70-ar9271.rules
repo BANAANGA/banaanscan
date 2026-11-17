@@ -1,0 +1,3 @@
+# Lets the person logged in at this computer open AR9271 Wi-Fi adapters (0cf3:9271) from normal programs, for the
+# sniffowireless-mobile prototype driver. It doesn't change how Linux uses the adapter otherwise.
+SUBSYSTEM=="usb", ATTR{idVendor}=="0cf3", ATTR{idProduct}=="9271", TAG+="uaccess"

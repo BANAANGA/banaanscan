@@ -23,6 +23,7 @@ import io.github.banaanga.sniffowireless.mobile.mt7921u.RamFile
 import io.github.banaanga.sniffowireless.mobile.mt7921u.RxPhy
 import io.github.banaanga.sniffowireless.mobile.mt7921u.UsbIo
 import io.github.banaanga.sniffowireless.mobile.core.Recorder
+import io.github.banaanga.sniffowireless.mobile.ath9k.Ath9kHtc
 import io.github.banaanga.sniffowireless.mobile.core.AttrGates
 import io.github.banaanga.sniffowireless.mobile.core.Channels
 import io.github.banaanga.sniffowireless.mobile.core.Gate
@@ -49,8 +50,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Android's USB host API behind the shared driver's [UsbIo]. */
-private class AndroidUsbIo(private val connection: UsbDeviceConnection, iface: UsbInterface) : UsbIo {
+/** Android's USB host API behind both drivers' UsbIo. bulkTransfer also serves the AR9271's interrupt endpoints. */
+private class AndroidUsbIo(private val connection: UsbDeviceConnection, iface: UsbInterface) : UsbIo, io.github.banaanga.sniffowireless.mobile.ath9k.UsbIo {
     private val endpoints: Map<Int, UsbEndpoint> =
         (0 until iface.endpointCount).map { iface.getEndpoint(it) }.associateBy { it.address }
 
@@ -102,6 +103,58 @@ private class PcapWriter(file: File) : AutoCloseable {
     override fun close() = out.close()
 }
 
+/** The USB Wi-Fi adapters sniffowireless-mobile has its own driver for. */
+enum class AdapterKind(val label: String, val iface: String, val bands: List<String>, val ids: List<Pair<Int, Int>>, val firmware: List<String>) {
+    MT7921U("MediaTek MT7921U", "mt7921u", listOf("2.4", "5", "6"), listOf(Mt7921u.VENDOR_ID to Mt7921u.PRODUCT_ID),
+        listOf("WIFI_MT7961_patch_mcu_1_2_hdr.bin", "WIFI_RAM_CODE_MT7961_1.bin")),
+    AR9271("Atheros AR9271", "ar9271", listOf("2.4"), Ath9kHtc.USB_IDS, listOf("htc_9271-1.4.0.fw")),
+    ;
+
+    /** The asset folder its firmware is bundled in. */
+    val assets get() = iface
+    fun matches(d: UsbDevice) = ids.any { it.first == d.vendorId && it.second == d.productId }
+    /** [freqs] reduced to the bands this adapter covers; the 2.4 GHz channels 1, 6 and 11 if none are left. */
+    fun usable(freqs: List<Int>) = freqs.filter { Channels.bandOf(it) in bands }.ifEmpty { listOf(2412, 2437, 2462) }
+
+    companion object {
+        fun of(d: UsbDevice) = entries.firstOrNull { it.matches(d) }
+    }
+}
+
+/** A received frame, from either driver. [rate] in Mb/s and [mcs] as sniffowireless labels it ("HT MCS 7 1SS 20"). */
+private class Heard(val freqMhz: Int, val rssi: Int?, val fcsError: Boolean, val data: ByteArray, val rate: Double?, val mcs: String?)
+
+/** What the capture loop needs from an adapter, whichever chip it has. */
+private interface Radio : AutoCloseable {
+    val firmware: String
+    fun start(freq: Int)
+    fun tune(freq: Int)
+    fun receive(timeoutMs: Int): Heard?
+}
+
+private class Mt7921Radio(private val chip: Mt7921u, override val firmware: String) : Radio {
+    private val monitor = Monitor(chip)
+    override fun start(freq: Int) = monitor.start(Channel.fromFreq(freq))
+    override fun tune(freq: Int) = monitor.tune(Channel.fromFreq(freq))
+    override fun receive(timeoutMs: Int): Heard? = monitor.receive(timeoutMs)?.let { f ->
+        val (rate, mcs) = rateOf(f.phy)
+        Heard(f.freqMhz, f.rssi, f.fcsError, f.data, rate, mcs)
+    }
+    override fun close() {}
+}
+
+private class Ar9271Radio(private val dev: Ath9kHtc) : Radio {
+    override val firmware get() = "htc_9271 " + dev.firmwareVersion
+    override fun start(freq: Int) = dev.startMonitor(io.github.banaanga.sniffowireless.mobile.ath9k.Channel(freq))
+    override fun tune(freq: Int) = dev.setChannel(io.github.banaanga.sniffowireless.mobile.ath9k.Channel(freq))
+    override fun receive(timeoutMs: Int): Heard? = dev.receive(timeoutMs)?.let { f ->
+        val ht = f.mcs?.let { PhyRates.ht(it, if (f.ht40) 40 else 20, f.shortGi) }
+        Heard(f.freqMhz, f.rssi, f.fcsError, f.data, ht?.first ?: f.legacyMbps, ht?.second)
+    }
+    /** Back into the boot ROM: the next start loads the firmware again, as after plugging it in. */
+    override fun close() = dev.close()
+}
+
 data class HeardNetwork(val bssid: String, val ssid: String?, val freqMhz: Int, val rssi: Int?, val beacons: Int,
                         val clients: Int, val vendor: String?, val lastSeen: Long)
 
@@ -130,6 +183,8 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
     val logFile get() = File(firmwareDir, "log.txt")
 
     val adapter = MutableStateFlow<UsbDevice?>(null)
+    /** Which chip [adapter] has. */
+    val kind = MutableStateFlow<AdapterKind?>(null)
     val firmwarePresent = MutableStateFlow(false)
     val running = MutableStateFlow(false)
     val status = MutableStateFlow<String?>(null)
@@ -160,17 +215,20 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
     }
 
     fun refresh() {
-        adapter.value = usb?.deviceList?.values?.firstOrNull { it.vendorId == Mt7921u.VENDOR_ID && it.productId == Mt7921u.PRODUCT_ID }
-        firmwarePresent.value = FIRMWARE.all { File(firmwareDir, it).isFile || isBundled(it) }
+        val d = usb?.deviceList?.values?.firstOrNull { AdapterKind.of(it) != null }
+        adapter.value = d
+        val k = d?.let(AdapterKind::of)
+        kind.value = k
+        firmwarePresent.value = k == null || k.firmware.all { File(firmwareDir, it).isFile || isBundled(k, it) }
     }
 
-    private fun isBundled(name: String) = runCatching { app.assets.open("mt7921u/$name").close() }.isSuccess
+    private fun isBundled(k: AdapterKind, name: String) = runCatching { app.assets.open("${k.assets}/$name").close() }.isSuccess
 
     /** The firmware file and where it came from: a pushed copy wins over the bundled one. */
-    private fun firmware(name: String): Pair<ByteArray, String> {
+    private fun firmware(k: AdapterKind, name: String): Pair<ByteArray, String> {
         val pushed = File(firmwareDir, name)
         if (pushed.isFile) return pushed.readBytes() to "pushed copy"
-        return app.assets.open("mt7921u/$name").use { it.readBytes() } to "bundled"
+        return app.assets.open("${k.assets}/$name").use { it.readBytes() } to "bundled"
     }
 
     fun close() {
@@ -217,7 +275,11 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
         }
     }
 
+    private var activeStatus: String? = null
+    private var radioInUse: Radio? = null
+
     private suspend fun capture(device: UsbDevice, ownFreqs: List<Int>, dwellMs: Long, note: (String) -> Unit) {
+        val kind = AdapterKind.of(device) ?: throw Mt7921Exception("Not a supported Wi-Fi adapter")
         val manager = usb ?: throw Mt7921Exception("This phone has no USB host support.")
         val connection = manager.openDevice(device) ?: throw Mt7921Exception("Couldn't open the adapter. Does the phone supply enough power over USB-OTG?")
         val iface = device.getInterface(0)
@@ -225,24 +287,41 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
         try {
             if (!connection.claimInterface(iface, true)) throw Mt7921Exception("Couldn't claim the adapter's USB interface.")
             note("Loading firmware…")
-            val chip = Mt7921u(AndroidUsbIo(connection, iface)) { note(it) }
+            val io = AndroidUsbIo(connection, iface)
             val started = System.currentTimeMillis()
-            val (patchBytes, patchSource) = firmware(FIRMWARE[0])
-            val (ramBytes, ramSource) = firmware(FIRMWARE[1])
-            note("Firmware: patch $patchSource, RAM $ramSource")
-            val info = chip.bringUp(PatchFile(patchBytes), RamFile(ramBytes))
-            note("Firmware ${info.firmware} running after ${System.currentTimeMillis() - started} ms; adapter ${info.capabilities.macAddress}")
+            val radio: Radio = when (kind) {
+                AdapterKind.MT7921U -> {
+                    val chip = Mt7921u(io) { note(it) }
+                    val (patchBytes, patchSource) = firmware(kind, kind.firmware[0])
+                    val (ramBytes, ramSource) = firmware(kind, kind.firmware[1])
+                    note("Firmware: patch $patchSource, RAM $ramSource")
+                    val info = chip.bringUp(PatchFile(patchBytes), RamFile(ramBytes))
+                    note("Firmware ${info.firmware} running after ${System.currentTimeMillis() - started} ms; adapter ${info.capabilities.macAddress}")
+                    Mt7921Radio(chip, info.firmware.toString())
+                }
+                AdapterKind.AR9271 -> {
+                    val (fw, source) = firmware(kind, kind.firmware[0])
+                    note("Firmware: $source")
+                    val dev = Ath9kHtc(io, { note(it) })
+                    dev.bringUp(fw)
+                    note("Firmware ${dev.firmwareVersion} running after ${System.currentTimeMillis() - started} ms")
+                    Ar9271Radio(dev)
+                }
+            }
+            sensor?.wifiControl?.iface = kind.iface
+            val statusName = "wifi:${kind.iface}"
             fun plan(): Pair<List<Int>, Long> =
-                if (sensor != null && sensor.sending) sensor.wifiControl.channels(ownFreqs) to (sensor.wifiControl.hopInterval(dwellMs / 1000.0) * 1000).toLong()
-                else ownFreqs to dwellMs
+                if (sensor != null && sensor.sending) kind.usable(sensor.wifiControl.channels(ownFreqs)) to (sensor.wifiControl.hopInterval(dwellMs / 1000.0) * 1000).toLong()
+                else kind.usable(ownFreqs) to dwellMs
             var (freqs, dwell) = plan()
-            val monitor = Monitor(chip)
-            monitor.start(Channel.fromFreq(freqs.first()))
-            sensor?.status?.register(STATUS, "type" to "wifi", "iface" to IFACE, "mon" to IFACE, "state" to "capturing",
+            radio.start(freqs.first())
+            sensor?.status?.register(statusName, "type" to "wifi", "iface" to kind.iface, "mon" to kind.iface, "state" to "capturing",
                 "channels" to freqs.map(Channels::label), "bands" to freqs.mapNotNull(Channels::bandOf).distinct().sorted(),
-                "supported_bands" to listOf("2.4", "5", "6"), "chan_rev" to sensor.wifiControl.rev, "regdomain" to sensor.wifiControl.override?.regdomain,
-                "hw_bus" to "usb", "hw_usb" to "%04x:%04x".format(device.vendorId, device.productId), "hw_driver" to "sniffowireless-mobile (mt7921u)",
-                "hw_maker" to device.manufacturerName, "hw_product" to device.productName, "firmware" to info.firmware.toString().take(64))
+                "supported_bands" to kind.bands, "chan_rev" to sensor.wifiControl.rev, "regdomain" to sensor.wifiControl.override?.regdomain,
+                "hw_bus" to "usb", "hw_usb" to "%04x:%04x".format(device.vendorId, device.productId), "hw_driver" to "sniffowireless-mobile (${kind.iface})",
+                "hw_maker" to device.manufacturerName, "hw_product" to device.productName, "chip" to kind.label, "firmware" to radio.firmware.take(64))
+            activeStatus = statusName
+            radioInUse = radio
             val fpGate = Gate()
             val gates = AttrGates()
             val links = LinkCounter()      // rates, MCS and retries of every client's data frames (the server's link quality)
@@ -262,22 +341,22 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
                     if (nowFreqs != freqs) {
                         freqs = nowFreqs
                         index = 0
-                        sensor?.status?.update(STATUS, "channels" to freqs.map(Channels::label),
+                        sensor?.status?.update(statusName, "channels" to freqs.map(Channels::label),
                             "bands" to freqs.mapNotNull(Channels::bandOf).distinct().sorted(), "chan_rev" to sensor.wifiControl.rev,
                             "regdomain" to sensor.wifiControl.override?.regdomain)
                         note("Channels now " + freqs.joinToString(",") { Channels.label(it) })
                     } else {
-                        sensor?.status?.update(STATUS, "chan_rev" to sensor.wifiControl.rev)
+                        sensor?.status?.update(statusName, "chan_rev" to sensor.wifiControl.rev)
                     }
                     dwell = nowDwell
                     val freq = freqs[index % freqs.size]
                     if (freq != tuned) {
-                        monitor.tune(Channel.fromFreq(freq))
+                        radio.tune(freq)
                         tuned = freq
                     }
                     currentFreq.value = freq
                     status.value = "Listening on %d MHz".format(freq)
-                    sensor?.status?.update(STATUS, "channel" to Channels.label(freq), "band" to Channels.bandOf(freq))
+                    sensor?.status?.update(statusName, "channel" to Channels.label(freq), "band" to Channels.bandOf(freq))
                     // The channel survey sniffowireless keeps per dwell: frames, bytes, rough airtime and retries.
                     var sFrames = 0
                     var sBytes = 0L
@@ -286,10 +365,10 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
                     val t0 = System.currentTimeMillis()
                     val end = t0 + dwell
                     while (System.currentTimeMillis() < end) {
-                        val f = monitor.receive(100) ?: continue
+                        val f = radio.receive(100) ?: continue
                         if (f.fcsError) continue
                         writer.write(f.freqMhz, f.rssi, f.data)
-                        sensor?.recorder?.takeIf { it.tapping }?.record("wifi", STATUS, Recorder.radiotap(f.freqMhz, f.rssi) + f.data, mapOf("tuned" to freq))
+                        sensor?.recorder?.takeIf { it.tapping }?.record("wifi", statusName, Recorder.radiotap(f.freqMhz, f.rssi) + f.data, mapOf("tuned" to freq))
                         collector.add(f.freqMhz, f.rssi, f.data)
                         sFrames++
                         sBytes += f.data.size
@@ -299,7 +378,8 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
                         if (sensor != null && sensor.sending) {
                             for (o in WifiFrames.parse(f.data, f.rssi, f.freqMhz, freq, sensor.now(), fpGate, gates)) sensor.sink.put(o)
                             for (o in joins.feed(f.data, f.rssi, sensor.now())) sensor.sink.put(o)
-                            val (rate, mcs) = rateOf(f.phy)
+                            val rate = f.rate
+                            val mcs = f.mcs
                             links.feed(f.data, rate, mcs, f.rssi)
                         }
                     }
@@ -322,7 +402,7 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
                         val pps = (collector.total - lastTotal) * 1000.0 / (System.currentTimeMillis() - lastRate)
                         lastRate = System.currentTimeMillis()
                         lastTotal = collector.total
-                        sensor?.status?.update(STATUS, "packets" to collector.total, "pps" to Math.round(pps * 10) / 10.0,
+                        sensor?.status?.update(statusName, "packets" to collector.total, "pps" to Math.round(pps * 10) / 10.0,
                             "band_frames" to HashMap(bandFrames))
                     }
                     if (index % 20 == 0) note("${collector.total} frames, ${collector.networkCount} networks so far")
@@ -330,7 +410,10 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
                 }
             }
         } finally {
-            sensor?.status?.remove(STATUS)
+            activeStatus?.let { sensor?.status?.remove(it) }
+            activeStatus = null
+            radioInUse?.let { runCatching { it.close() } }
+            radioInUse = null
             runCatching { connection.releaseInterface(iface) }
             connection.close()
         }
@@ -397,10 +480,8 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
     }
 
     companion object {
-        /** The name the adapter is reported under on sniffowireless's Sensors and Wi-Fi channels pages. */
+        /** The name an MT7921U is reported under on sniffowireless's Sensors and Wi-Fi channels pages (an AR9271: "ar9271"). */
         const val IFACE = "mt7921u"
-        const val STATUS = "wifi:$IFACE"
-        private val FIRMWARE = listOf("WIFI_MT7961_patch_mcu_1_2_hdr.bin", "WIFI_RAM_CODE_MT7961_1.bin")
     }
 }
 

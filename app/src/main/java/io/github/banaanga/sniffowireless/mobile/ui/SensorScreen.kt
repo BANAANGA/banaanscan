@@ -64,6 +64,7 @@ fun SensorScreen(vm: MainViewModel) {
     val s = hub.settings
     val running by hub.sensorRunning.collectAsStateWithLifecycle()
     val usbWifi by hub.wifiMonitor.adapter.collectAsStateWithLifecycle()
+    val usbWifiKind by hub.wifiMonitor.kind.collectAsStateWithLifecycle()
     val usbBt by hub.btUsb.adapter.collectAsStateWithLifecycle()
     val dongles by hub.zigbee.dongles.collectAsStateWithLifecycle()
     var url by rememberSaveable { mutableStateOf(s.serverUrl) }
@@ -182,8 +183,8 @@ fun SensorScreen(vm: MainViewModel) {
         Column(Modifier.padding(horizontal = 12.dp)) {
             SourceRow("Phone Wi-Fi scan", "Access points around the phone (no clients: that needs monitor mode).", phoneWifi, !running) { phoneWifi = it; s.phoneWifi = it }
             SourceRow("Phone Bluetooth", "BLE adverts and classic devices the phone's own Bluetooth hears.", phoneBt, !running) { phoneBt = it; s.phoneBt = it }
-            SourceRow("USB Wi-Fi adapter (MT7921U)",
-                if (usbWifi != null) "Connected: monitor mode, access points and clients on 2.4, 5 and 6 GHz." else "Not connected.", usbWifiOn, !running) { usbWifiOn = it; s.usbWifi = it }
+            SourceRow("USB Wi-Fi adapter (MT7921U or AR9271)",
+                if (usbWifi != null) "Connected: ${usbWifiKind?.label}, monitor mode, access points and clients on ${usbWifiKind?.bands?.joinToString(", ")} GHz." else "Not connected.", usbWifiOn, !running) { usbWifiOn = it; s.usbWifi = it }
             if (usbWifiOn) {
                 FieldLabel("Channels when the server sets none")
                 Field(channels, { channels = it }, "default,6ghz", enabled = !running, mono = true, error = channelError != null)

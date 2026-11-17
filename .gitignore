@@ -7,3 +7,4 @@ local.properties
 
 # USB / radio captures from tools/mt7921u (may contain nearby devices' traffic)
 mt7921u-trace/
+ath9k-trace/
