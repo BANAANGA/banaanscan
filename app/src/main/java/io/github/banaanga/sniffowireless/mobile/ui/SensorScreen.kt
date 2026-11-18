@@ -65,6 +65,7 @@ fun SensorScreen(vm: MainViewModel) {
     val running by hub.sensorRunning.collectAsStateWithLifecycle()
     val usbWifi by hub.wifiMonitor.adapter.collectAsStateWithLifecycle()
     val usbWifiKind by hub.wifiMonitor.kind.collectAsStateWithLifecycle()
+    val usbWifiAll by hub.wifiMonitor.adapters.collectAsStateWithLifecycle()
     val usbBt by hub.btUsb.adapter.collectAsStateWithLifecycle()
     val dongles by hub.zigbee.dongles.collectAsStateWithLifecycle()
     var url by rememberSaveable { mutableStateOf(s.serverUrl) }
@@ -183,14 +184,22 @@ fun SensorScreen(vm: MainViewModel) {
         Column(Modifier.padding(horizontal = 12.dp)) {
             SourceRow("Phone Wi-Fi scan", "Access points around the phone (no clients: that needs monitor mode).", phoneWifi, !running) { phoneWifi = it; s.phoneWifi = it }
             SourceRow("Phone Bluetooth", "BLE adverts and classic devices the phone's own Bluetooth hears.", phoneBt, !running) { phoneBt = it; s.phoneBt = it }
-            SourceRow("USB Wi-Fi adapter (MT7921U or AR9271)",
-                if (usbWifi != null) "Connected: ${usbWifiKind?.label}, monitor mode, access points and clients on ${usbWifiKind?.bands?.joinToString(", ")} GHz." else "Not connected.", usbWifiOn, !running) { usbWifiOn = it; s.usbWifi = it }
+            SourceRow("USB Wi-Fi adapters (MT7921U, AR9271)",
+                when {
+                    usbWifiAll.size > 1 -> "Connected: ${usbWifiAll.size} adapters, monitor mode, the channels split between them."
+                    usbWifi != null -> "Connected: ${usbWifiKind?.label}, monitor mode, access points and clients on ${usbWifiKind?.bands?.joinToString(", ")} GHz."
+                    else -> "Not connected."
+                }, usbWifiOn, !running) { usbWifiOn = it; s.usbWifi = it }
             if (usbWifiOn) {
                 FieldLabel("Channels when the server sets none")
                 Field(channels, { channels = it }, "default,6ghz", enabled = !running, mono = true, error = channelError != null)
                 Text(channelError ?: "As in sniffowireless: default, all, 6ghz, 1,6,11, 36-48, 6g:37 … The server's Settings → Wi-Fi channels wins.",
                     style = MaterialTheme.typography.bodySmall, color = if (channelError != null) Sniffo.c.bad else Sniffo.c.muted,
                     modifier = Modifier.padding(top = 4.dp, bottom = 6.dp))
+                if (usbWifiAll.isNotEmpty()) {
+                    val general = runCatching { Channels.check(channels) }.getOrElse { Channels.parse(SensorSettings.DEFAULT_WIFI_CHANNELS) }
+                    AdapterChannels(hub.wifiMonitor, s, if (running) hub.wifiControl.override?.channels?.takeIf { it.isNotEmpty() } ?: general else general)
+                }
             }
             SourceRow("USB Bluetooth adapter",
                 if (usbBt != null) "Connected: ${usbBt!!.label}. Every advert, long range too." else "Not connected.", usbBtOn, !running) { usbBtOn = it; s.usbBt = it }

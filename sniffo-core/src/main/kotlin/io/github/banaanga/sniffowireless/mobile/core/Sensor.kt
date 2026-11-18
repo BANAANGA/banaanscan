@@ -66,10 +66,13 @@ class LogBuffer(private val capacity: Int = 2000) {
 /**
  * Wi-Fi channel settings set for this sensor in sniffowireless's web UI (Settings → Wi-Fi channels), as its
  * channels.WifiControl applies them on a remote sensor: a revision that is new and valid replaces the override; an
- * invalid one is refused once. [iface] is the name the adapter is reported under, for per-adapter lists.
+ * invalid one is refused once. The override has a general list and per-adapter lists (keyed by the name an adapter is
+ * reported under, "mt7921u", "ar9271"); [plan] combines them with the phone's own settings and splits the general list
+ * over the adapters, as sniffowireless does for several adapters on one sensor.
  */
-class WifiControl(@Volatile var iface: String, private val log: (String, String) -> Unit = { _, _ -> }) {
-    data class Plan(val channels: List<Int>, val hopInterval: Double?, val regdomain: String?)
+class WifiControl(private val log: (String, String) -> Unit = { _, _ -> }) {
+    /** [perIface]: an adapter's own list, or "" to drop a list the phone itself set for it (share the general list). */
+    data class Plan(val channels: List<Int>?, val perIface: Map<String, String>, val hopInterval: Double?, val regdomain: String?)
 
     @Volatile var rev = 0
         private set
@@ -78,10 +81,28 @@ class WifiControl(@Volatile var iface: String, private val log: (String, String)
     private var rejected: Int? = null
     var onChange: (() -> Unit)? = null
 
-    /** The channels to hop over: the server's list when it set one, else [own]. */
-    fun channels(own: List<Int>): List<Int> = override?.channels?.takeIf { it.isNotEmpty() } ?: own
-
     fun hopInterval(own: Double): Double = override?.hopInterval ?: own
+
+    /**
+     * The channels each adapter hops over (sniffowireless's channels.effective and WifiControl._plan): the general list
+     * is the server's when it set one, else [ownChannels]; an adapter with a list of its own (the server's per-adapter
+     * list, else the phone's [ownPerIface]) keeps it; the others share the general list ([split]). [adapters] maps each
+     * adapter's name to the frequencies it can tune; lists are reduced to those, and an adapter left with nothing gets
+     * the general list's channels it can tune.
+     */
+    fun plan(ownChannels: List<Int>, ownPerIface: Map<String, List<Int>>, adapters: Map<String, (Int) -> Boolean>): Map<String, List<Int>> {
+        val o = override
+        val general = o?.channels?.takeIf { it.isNotEmpty() } ?: ownChannels
+        val per = LinkedHashMap(ownPerIface.filterValues { it.isNotEmpty() })
+        o?.perIface?.forEach { (iface, spec) ->
+            if (spec.isEmpty()) per.remove(iface) else runCatching { Channels.check(spec) }.getOrNull()?.let { per[iface] = it }
+        }
+        val auto = adapters.filterKeys { it !in per }
+        val shared = split(general, auto)
+        return adapters.mapValues { (iface, can) ->
+            (per[iface] ?: shared[iface]).orEmpty().filter(can).ifEmpty { general.filter(can) }
+        }
+    }
 
     fun applyRemote(conf: Any?) {
         if (conf !is Map<*, *>) return
@@ -99,9 +120,17 @@ class WifiControl(@Volatile var iface: String, private val log: (String, String)
     }
 
     private fun clean(o: Map<*, *>): Plan? {
-        var channels = (o["channels"] as? String)?.takeIf { it.isNotBlank() }?.let { Channels.check(it) }
-        val per = o["per_iface"] as? Map<*, *>
-        (per?.get(iface) as? String)?.let { spec -> channels = if (spec.isEmpty()) channels else Channels.check(spec) }
+        val channels = (o["channels"] as? String)?.takeIf { it.isNotBlank() }?.let { Channels.check(it) }
+        val per = LinkedHashMap<String, String>()
+        (o["per_iface"] as? Map<*, *>)?.entries?.take(8)?.forEach { (k, v) ->
+            val iface = k as? String ?: return@forEach
+            require(Regex("^[A-Za-z0-9_.:-]{1,15}$").matches(iface)) { "'$iface' is not an adapter name" }
+            when (v) {
+                null -> {}
+                is String -> { if (v.isNotBlank()) Channels.check(v); per[iface] = v.trim() }
+                else -> throw IllegalArgumentException("The channel list for $iface is not text")
+            }
+        }
         val regdomain = (o["regdomain"] as? String)?.trim()?.uppercase()?.takeIf { it.isNotEmpty() }?.also {
             require(Regex("^[A-Z]{2}$").matches(it)) { "The regulatory domain is a two-letter country code, for example NL" }
         }
@@ -111,8 +140,33 @@ class WifiControl(@Volatile var iface: String, private val log: (String, String)
             is String -> h.toDoubleOrNull() ?: throw IllegalArgumentException("The hop interval is a number of seconds")
             else -> throw IllegalArgumentException("The hop interval is a number of seconds")
         }?.also { require(it in 0.2..60.0) { "The hop interval must be between 0.2 and 60 seconds" } }
-        if (channels == null && hop == null && regdomain == null) return null
-        return Plan(channels.orEmpty(), hop, regdomain)
+        if (channels == null && per.isEmpty() && hop == null && regdomain == null) return null
+        return Plan(channels, per, hop, regdomain)
+    }
+
+    companion object {
+        /**
+         * Spreads [freqs] over [adapters] so no channel is listened to twice, giving each to the least busy adapter that
+         * can tune it (sniffowireless's wifi.assign_channels). Unlike there, the channels the fewest adapters can tune
+         * are handed out first and ties go to the adapter that can tune fewer of them, so a 2.4 GHz-only adapter takes
+         * 2.4 GHz and a tri-band one keeps 5 and 6 GHz rather than half of everything. Each list keeps the plan's order.
+         */
+        fun split(freqs: List<Int>, adapters: Map<String, (Int) -> Boolean>): Map<String, List<Int>> {
+            val names = adapters.keys.toList()
+            val out = names.associateWith { ArrayList<Int>() }
+            val order = freqs.distinct().withIndex().sortedBy { (_, f) -> names.count { adapters.getValue(it)(f) } }
+            val picked = HashMap<String, MutableList<IndexedValue<Int>>>()
+            val reach = names.associateWith { n -> freqs.count { adapters.getValue(n)(it) } }
+            for (iv in order) {
+                val able = names.filter { adapters.getValue(it)(iv.value) }
+                if (able.isEmpty()) continue
+                // ties: the adapter that can tune fewer of the plan's channels, so the wider one stays free
+                val to = able.minWith(compareBy({ picked[it]?.size ?: 0 }, { reach.getValue(it) }))
+                picked.getOrPut(to) { ArrayList() } += iv
+            }
+            picked.forEach { (iface, l) -> out.getValue(iface).addAll(l.sortedBy { it.index }.map { it.value }) }
+            return out
+        }
     }
 }
 

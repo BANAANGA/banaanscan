@@ -79,6 +79,13 @@ class SensorSettings(context: Context) {
             return if (v == null || (v == "default" && !p.getBoolean("wifi_channels_chosen", false))) DEFAULT_WIFI_CHANNELS else v
         }
         set(v) = p.edit().putString("wifi_channels", v.trim()).putBoolean("wifi_channels_chosen", true).apply()
+    /**
+     * One USB Wi-Fi adapter's own channel list (by its name, "mt7921u", "ar9271"), as sniffowireless's
+     * WIFI_CHANNELS_<iface>: empty means it takes its automatic share of the general list. Used on the Wi-Fi page and
+     * in sensor mode; a per-adapter list the server sets wins.
+     */
+    fun wifiChannelsFor(adapter: String): String = p.getString("wifi_channels_$adapter", "") ?: ""
+    fun setWifiChannelsFor(adapter: String, spec: String) = p.edit().putString("wifi_channels_$adapter", spec.trim()).apply()
     /** LoRa through a board with sniffowireless's lora-sniffer firmware. */
     var lora: Boolean
         get() = p.getBoolean("lora", true)
@@ -129,7 +136,7 @@ class Hub(private val app: Application) {
     val settings = SensorSettings(app)
     val status = StatusBoard()
     val logs = LogBuffer()
-    val wifiControl = WifiControl(UsbWifiMonitor.IFACE) { level, msg -> log(level, "sniffowireless.channels", msg) }
+    val wifiControl = WifiControl { level, msg -> log(level, "sniffowireless.channels", msg) }
     val zigbeeControl = ZigbeeControl { level, msg -> log(level, "sniffowireless.zigbee", msg) }
     val loraControl = LoraControl { level, msg -> log(level, "sniffowireless.lora", msg) }
     /** USB device names of boards that answered as lora-sniffers: the Zigbee scanner leaves them alone. */

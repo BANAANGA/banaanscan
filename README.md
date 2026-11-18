@@ -128,6 +128,11 @@ sniffowireless-mobile can drive two kinds of USB adapter itself, without root, t
   open-source firmware (`htc_9271-1.4.0`) is bundled. See [tools/ath9k](tools/ath9k/README.md). Compatible adapters:
   * Atheros AR9271 "UB91" (`0cf3:9271`, tested)
   * Alfa AWUS036NHA, TP-Link TL-WN722N version 1 (not v2/v3), and other AR9271 adapters
+* **Several Wi-Fi adapters at once** (through a USB hub), as sniffowireless runs them on a Pi: each listens on its share
+  of the channel list, so no channel is listened to twice. The channels only one adapter can tune go to it, and the rest
+  are spread evenly (with an MT7921U and an AR9271: the AR9271 takes 2.4 GHz, the MT7921U 5 and 6 GHz). Each adapter can
+  be given its own list on the Wi-Fi or Sensor page; in sensor mode a per-adapter list set on the server (Settings →
+  Wi-Fi channels) wins. Adapters are named as sniffowireless shows them: `mt7921u`, `ar9271`, a second one `mt7921u-2`.
 * **Bluetooth** with a USB Bluetooth adapter, tested with the TP-Link UB500 Plus (Realtek RTL8761BU, `2357:0604`).
   Compared with the phone's own Bluetooth it reports every advertising packet without Android's filtering, hears
   long-range (Coded PHY) devices, knows whether an address is public or random, and has a **Listen only** mode that

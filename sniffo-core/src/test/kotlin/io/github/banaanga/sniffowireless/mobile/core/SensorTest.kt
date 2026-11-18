@@ -67,23 +67,27 @@ class SensorTest {
         assertEquals(3L, f.dropped)
     }
 
+    private val tri: (Int) -> Boolean = { true }
+    private val only24: (Int) -> Boolean = { Channels.bandOf(it) == "2.4" }
+
     @Test fun `channel settings from the reply`() {
-        val wifi = WifiControl("mt7921u")
+        val wifi = WifiControl()
         val f = Forwarder(Target("http://x", "t"), StatusBoard(), LogBuffer(), emptyMap()) { _, _, _ ->
             """{"accepted":0,"rejected":0,"channel_config":{"rev":3,"channels":"1,6,11","per_iface":{},"regdomain":"nl","hop_interval":0.5}}"""
         }
         f.onChannelConfig = wifi::applyRemote
         assertTrue(f.step())
         assertEquals(3, wifi.rev)
-        assertEquals(listOf(2412, 2437, 2462), wifi.channels(listOf(5180)))
+        assertEquals(listOf(2412, 2437, 2462), wifi.plan(listOf(5180), emptyMap(), mapOf("mt7921u" to tri))["mt7921u"])
         assertEquals(0.5, wifi.hopInterval(0.4), 0.0)
         assertEquals("NL", wifi.override!!.regdomain)
     }
 
     @Test fun `per-adapter list, invalid revisions and going back to the sensor's own`() {
-        val wifi = WifiControl("mt7921u")
+        val wifi = WifiControl()
+        val one = mapOf("mt7921u" to tri)
         wifi.applyRemote(mapOf("rev" to 1, "channels" to "default", "per_iface" to mapOf("mt7921u" to "6g:37")))
-        assertEquals(listOf(6135), wifi.channels(emptyList()))
+        assertEquals(listOf(6135), wifi.plan(emptyList(), emptyMap(), one)["mt7921u"])
         wifi.applyRemote(mapOf("rev" to 2, "channels" to "1,6,999"))
         assertEquals("a bad revision is refused", 1, wifi.rev)
         wifi.applyRemote(mapOf("rev" to 2, "channels" to "1"))
@@ -91,7 +95,37 @@ class SensorTest {
         wifi.applyRemote(mapOf("rev" to 4, "channels" to null, "per_iface" to emptyMap<String, String>(), "regdomain" to null, "hop_interval" to null))
         assertEquals(4, wifi.rev)
         assertNull(wifi.override)
-        assertEquals(listOf(5180), wifi.channels(listOf(5180)))
+        assertEquals(listOf(5180), wifi.plan(listOf(5180), emptyMap(), one)["mt7921u"])
+    }
+
+    @Test fun `two adapters split the channels, each keeping the bands only it can tune`() {
+        val wifi = WifiControl()
+        val both = linkedMapOf("mt7921u" to tri, "ar9271" to only24)
+        val plan = wifi.plan(Channels.parse("1,6,11,36,40,44,48,6g:5,6g:21"), emptyMap(), both)
+        assertEquals(listOf(2412, 2437, 2462), plan["ar9271"])
+        assertEquals(listOf(5180, 5200, 5220, 5240, 5975, 6055), plan["mt7921u"])
+        // 2.4 GHz only: shared out, nothing twice
+        val p24 = wifi.plan(Channels.parse("1,2,3,4,5,6"), emptyMap(), both)
+        assertEquals(6, p24.values.sumOf { it.size })
+        assertEquals(3, p24.getValue("ar9271").size)
+    }
+
+    @Test fun `own per-adapter lists, and the server's overriding or dropping them`() {
+        val wifi = WifiControl()
+        val both = linkedMapOf("mt7921u" to tri, "ar9271" to only24)
+        val own = mapOf("ar9271" to listOf(2412))
+        var plan = wifi.plan(Channels.parse("1,6,11,36"), own, both)
+        assertEquals(listOf(2412), plan["ar9271"])
+        assertEquals("the other adapter takes the whole general list", listOf(2412, 2437, 2462, 5180), plan["mt7921u"])
+        // A list for an adapter that can't tune any of it: it falls back to what it can tune of the general list
+        plan = wifi.plan(Channels.parse("1,6,36"), mapOf("ar9271" to listOf(5180)), both)
+        assertEquals(listOf(2412, 2437), plan["ar9271"])
+        wifi.applyRemote(mapOf("rev" to 1, "per_iface" to mapOf("ar9271" to "11")))
+        assertEquals(listOf(2462), wifi.plan(Channels.parse("1,6"), own, both)["ar9271"])
+        wifi.applyRemote(mapOf("rev" to 2, "per_iface" to mapOf("ar9271" to "")))
+        plan = wifi.plan(Channels.parse("1,6,36"), own, both)
+        assertEquals("\"\" drops the phone's own list: back to the split", listOf(2412, 2437), plan["ar9271"])
+        assertEquals(listOf(5180), plan["mt7921u"])
     }
 
     @Test fun `zigbee settings`() {

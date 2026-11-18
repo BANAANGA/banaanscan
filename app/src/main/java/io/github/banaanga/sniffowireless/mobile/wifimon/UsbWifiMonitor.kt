@@ -41,6 +41,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import io.github.banaanga.sniffowireless.mobile.core.WifiControl
 import java.io.DataOutputStream
 import java.io.File
 import java.io.PrintWriter
@@ -88,6 +92,7 @@ private class PcapWriter(file: File) : AutoCloseable {
             .putInt(0xa1b2c3d4.toInt()).putShort(2).putShort(4).putInt(0).putInt(0).putInt(65535).putInt(127).array())
     }
 
+    @Synchronized
     fun write(freqMhz: Int, rssi: Int?, frame: ByteArray) {
         val rt = ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN)
         rt.put(0).put(0).putShort(16).putInt((1 shl 1) or (1 shl 3) or (if (rssi != null) 1 shl 5 else 0))
@@ -170,10 +175,21 @@ enum class ChannelPlan(val label: String, val freqs: List<Int>) {
     ALL("All", BAND_24.freqs + BAND_5.freqs + BAND_6.freqs),
 }
 
+/** A supported Wi-Fi adapter that is plugged in. [name] is how it is reported to sniffowireless ("mt7921u", "ar9271"; a
+ * second one of the same kind "mt7921u-2"), and keys its channel settings. */
+data class WifiAdapter(val device: UsbDevice, val kind: AdapterKind, val name: String) {
+    /** Whether it can tune [freq]. */
+    fun can(freq: Int) = Channels.bandOf(freq) in kind.bands
+}
+
+/** What one adapter is doing, for the Wi-Fi page. */
+data class AdapterState(val status: String? = null, val error: String? = null, val freq: Int? = null, val channels: List<Int> = emptyList())
+
 /**
- * Wi-Fi monitor mode through an MT7921U USB adapter, using sniffowireless-mobile's own driver (no root). Only listens: the
- * driver never transmits. The firmware is bundled in assets/mt7921u under MediaTek's licence (LICENCE.mediatek there);
- * a copy put on the phone with tools/mt7921u/push-firmware.sh takes precedence, for trying other versions.
+ * Wi-Fi monitor mode through USB adapters (MT7921U and AR9271), using sniffowireless-mobile's own drivers (no root).
+ * Several adapters run at once, each hopping over its share of the channels (see [WifiControl.plan]). Only listens: the
+ * drivers never transmit. The firmware is bundled in assets/ under the makers' licences; a copy put on the phone with
+ * tools/mt7921u/push-firmware.sh takes precedence, for trying other versions.
  */
 class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
     private val app = context.applicationContext
@@ -182,14 +198,18 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
     /** Readable after a session with `adb shell run-as io.github.banaanga.sniffowireless.mobile.debug cat files/mt7921u/log.txt`. */
     val logFile get() = File(firmwareDir, "log.txt")
 
+    /** Every supported adapter plugged in. */
+    val adapters = MutableStateFlow<List<WifiAdapter>>(emptyList())
+    /** The first of [adapters], for places that only name one. */
     val adapter = MutableStateFlow<UsbDevice?>(null)
-    /** Which chip [adapter] has. */
     val kind = MutableStateFlow<AdapterKind?>(null)
     val firmwarePresent = MutableStateFlow(false)
     val running = MutableStateFlow(false)
+    /** Messages about the session as a whole (permission, firmware); each adapter's are in [states]. */
     val status = MutableStateFlow<String?>(null)
     val error = MutableStateFlow<String?>(null)
-    val currentFreq = MutableStateFlow<Int?>(null)
+    /** Per adapter, by [WifiAdapter.name]. */
+    val states = MutableStateFlow<Map<String, AdapterState>>(emptyMap())
     private val _networks = MutableStateFlow<List<HeardNetwork>>(emptyList())
     val networks: StateFlow<List<HeardNetwork>> = _networks.asStateFlow()
     private val _clients = MutableStateFlow<List<HeardClient>>(emptyList())
@@ -215,11 +235,17 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
     }
 
     fun refresh() {
-        val d = usb?.deviceList?.values?.firstOrNull { AdapterKind.of(it) != null }
-        adapter.value = d
-        val k = d?.let(AdapterKind::of)
-        kind.value = k
-        firmwarePresent.value = k == null || k.firmware.all { File(firmwareDir, it).isFile || isBundled(k, it) }
+        val found = usb?.deviceList?.values.orEmpty().mapNotNull { d -> AdapterKind.of(d)?.let { d to it } }.sortedBy { it.first.deviceName }
+        val seen = HashMap<AdapterKind, Int>()
+        val list = found.map { (d, k) ->
+            val n = (seen[k] ?: 0) + 1
+            seen[k] = n
+            WifiAdapter(d, k, if (n == 1) k.iface else "${k.iface}-$n")
+        }
+        adapters.value = list
+        adapter.value = list.firstOrNull()?.device
+        kind.value = list.firstOrNull()?.kind
+        firmwarePresent.value = list.all { a -> a.kind.firmware.all { File(firmwareDir, it).isFile || isBundled(a.kind, it) } }
     }
 
     private fun isBundled(k: AdapterKind, name: String) = runCatching { app.assets.open("${k.assets}/$name").close() }.isSuccess
@@ -235,62 +261,120 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
         runCatching { app.unregisterReceiver(hotplug) }
     }
 
+    /** This phone's own channel list for one adapter (Wi-Fi page / Sensor page), or null for the automatic share. */
+    private fun ownList(a: WifiAdapter): List<Int>? =
+        hub?.settings?.wifiChannelsFor(a.name)?.takeIf { it.isNotBlank() }?.let { runCatching { Channels.check(it) }.getOrNull() }
+
+    /**
+     * Which channels each adapter hops over and how long it stays on each: [ownFreqs] split over the adapters, an
+     * adapter's own list where one is set, and in sensor mode the server's settings on top.
+     */
+    fun plan(ownFreqs: List<Int>, dwellMs: Long, list: List<WifiAdapter> = adapters.value): Pair<Map<String, List<Int>>, Long> {
+        val sensor = hub
+        val control = if (sensor != null && sensor.sending) sensor.wifiControl else LOCAL
+        val own = list.mapNotNull { a -> ownList(a)?.let { a.name to it } }.toMap()
+        val p = control.plan(ownFreqs, own, list.associate { a -> a.name to a::can })
+        return list.associate { a -> a.name to a.kind.usable(p[a.name].orEmpty()) } to (control.hopInterval(dwellMs / 1000.0) * 1000).toLong()
+    }
+
     suspend fun run(plan: ChannelPlan, dwellMs: Long = 400) = run(plan.freqs, dwellMs)
 
     /**
-     * Listens on [freqs], [dwellMs] each. In sensor mode the channels and hop time the server sets for this sensor
-     * (Settings → Wi-Fi channels in sniffowireless) win, and they are re-read on every hop.
+     * Listens with every adapter plugged in, [dwellMs] per channel, the channels split between them ([plan], re-read on
+     * every hop). One adapter failing or being unplugged doesn't stop the others.
      */
     suspend fun run(freqs: List<Int>, dwellMs: Long = 400) {
-        val device = adapter.value ?: return
+        val list = adapters.value
+        if (list.isEmpty()) return
         running.value = true
         error.value = null
         frames.value = 0
         _networks.value = emptyList()
         _clients.value = emptyList()
         _channels.value = emptyList()
+        states.value = list.associate { it.name to AdapterState(status = "Waiting") }
         firmwareDir.mkdirs()
         val log = PrintWriter(logFile.outputStream().bufferedWriter(), true)
+        val time = SimpleDateFormat("HH:mm:ss.SSS", Locale.ROOT)
         fun note(msg: String) {
-            log.println(SimpleDateFormat("HH:mm:ss.SSS", Locale.ROOT).format(Date()) + " " + msg)
+            synchronized(log) { log.println(time.format(Date()) + " " + msg) }
             status.value = msg
         }
         try {
             if (!firmwarePresent.value) {
                 throw Mt7921Exception("Firmware missing from this build. Copy it to the phone with tools/mt7921u/push-firmware.sh, then try again.")
             }
-            note("Waiting for USB permission…")
-            if (!ensurePermission(device)) throw Mt7921Exception("USB permission was denied.")
-            withContext(Dispatchers.IO) { capture(device, freqs, dwellMs, ::note) }
+            val allowed = list.filter { a ->
+                note("Waiting for USB permission for the ${a.kind.label}…")
+                ensurePermission(a.device).also { ok -> if (!ok) setState(a) { it.copy(error = "USB permission was denied.") } }
+            }
+            if (allowed.isEmpty()) throw Mt7921Exception("USB permission was denied.")
+            status.value = null
+            val collector = Collector()
+            PcapWriter(File(firmwareDir, "capture.pcap")).use { writer ->
+                withContext(Dispatchers.IO) {
+                    coroutineScope {
+                        for (a in allowed) launch {
+                            val tag: (String) -> Unit = { msg ->
+                                synchronized(log) { log.println(time.format(Date()) + " [" + a.name + "] " + msg) }
+                                setState(a) { it.copy(status = msg) }
+                            }
+                            try {
+                                capture(a, allowed, freqs, dwellMs, collector, writer, tag)
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Throwable) {
+                                // a driver problem shows on the page (Errors too) and leaves the other adapters running
+                                tag("Failed: ${e.message ?: e.javaClass.simpleName}")
+                                setState(a) { it.copy(error = e.message ?: e.toString(), freq = null) }
+                            }
+                        }
+                        launch {
+                            while (true) {
+                                delay(500)
+                                _networks.value = collector.networks()
+                                _clients.value = collector.clients()
+                                _channels.value = collector.channels()
+                                frames.value = collector.total
+                                if (states.value.values.all { it.error != null }) break
+                            }
+                        }
+                    }
+                }
+            }
         } catch (e: CancellationException) {
             note("Stopped")
             throw e
         } catch (e: Throwable) {
-            // Errors too (a driver problem must show as an error here, not take the app down)
             note("Failed: ${e.message ?: e.javaClass.simpleName}")
             error.value = e.message ?: e.toString()
         } finally {
             running.value = false
-            currentFreq.value = null
+            states.value = states.value.mapValues { it.value.copy(freq = null) }
             log.close()
         }
     }
 
-    private var activeStatus: String? = null
-    private var radioInUse: Radio? = null
+    private fun setState(a: WifiAdapter, change: (AdapterState) -> AdapterState) {
+        synchronized(states) { states.value = states.value + (a.name to change(states.value[a.name] ?: AdapterState())) }
+    }
 
-    private suspend fun capture(device: UsbDevice, ownFreqs: List<Int>, dwellMs: Long, note: (String) -> Unit) {
-        val kind = AdapterKind.of(device) ?: throw Mt7921Exception("Not a supported Wi-Fi adapter")
+    private suspend fun capture(a: WifiAdapter, all: List<WifiAdapter>, ownFreqs: List<Int>, dwellMs: Long,
+                                collector: Collector, writer: PcapWriter, note: (String) -> Unit) {
+        val device = a.device
+        val kind = a.kind
         val manager = usb ?: throw Mt7921Exception("This phone has no USB host support.")
         val connection = manager.openDevice(device) ?: throw Mt7921Exception("Couldn't open the adapter. Does the phone supply enough power over USB-OTG?")
         val iface = device.getInterface(0)
         val sensor = hub
+        val statusName = "wifi:${a.name}"
+        var radio: Radio? = null
         try {
             if (!connection.claimInterface(iface, true)) throw Mt7921Exception("Couldn't claim the adapter's USB interface.")
             note("Loading firmware…")
             val io = AndroidUsbIo(connection, iface)
             val started = System.currentTimeMillis()
-            val radio: Radio = when (kind) {
+            radio = when (kind) {
                 AdapterKind.MT7921U -> {
                     val chip = Mt7921u(io) { note(it) }
                     val (patchBytes, patchSource) = firmware(kind, kind.firmware[0])
@@ -309,112 +393,93 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
                     Ar9271Radio(dev)
                 }
             }
-            sensor?.wifiControl?.iface = kind.iface
-            val statusName = "wifi:${kind.iface}"
-            fun plan(): Pair<List<Int>, Long> =
-                if (sensor != null && sensor.sending) kind.usable(sensor.wifiControl.channels(ownFreqs)) to (sensor.wifiControl.hopInterval(dwellMs / 1000.0) * 1000).toLong()
-                else kind.usable(ownFreqs) to dwellMs
-            var (freqs, dwell) = plan()
+            fun mine(): Pair<List<Int>, Long> = plan(ownFreqs, dwellMs, all).let { (p, d) -> p.getValue(a.name) to d }
+            var (freqs, dwell) = mine()
             radio.start(freqs.first())
-            sensor?.status?.register(statusName, "type" to "wifi", "iface" to kind.iface, "mon" to kind.iface, "state" to "capturing",
+            setState(a) { it.copy(channels = freqs) }
+            sensor?.status?.register(statusName, "type" to "wifi", "iface" to a.name, "mon" to a.name, "state" to "capturing",
                 "channels" to freqs.map(Channels::label), "bands" to freqs.mapNotNull(Channels::bandOf).distinct().sorted(),
                 "supported_bands" to kind.bands, "chan_rev" to sensor.wifiControl.rev, "regdomain" to sensor.wifiControl.override?.regdomain,
                 "hw_bus" to "usb", "hw_usb" to "%04x:%04x".format(device.vendorId, device.productId), "hw_driver" to "sniffowireless-mobile (${kind.iface})",
                 "hw_maker" to device.manufacturerName, "hw_product" to device.productName, "chip" to kind.label, "firmware" to radio.firmware.take(64))
-            activeStatus = statusName
-            radioInUse = radio
             val fpGate = Gate()
             val gates = AttrGates()
             val links = LinkCounter()      // rates, MCS and retries of every client's data frames (the server's link quality)
             val joins = JoinWatcher()      // the steps of every client's connections (the server's troubleshooter and roams)
-            val pcap = File(firmwareDir, "capture.pcap")
-            PcapWriter(pcap).use { writer ->
-                val collector = Collector()
-                var index = 0
-                var tuned = freqs.first()
-                var lastPublish = 0L
-                var lastRate = System.currentTimeMillis()
-                var lastTotal = 0
-                val bandFrames = HashMap<String, Int>()
-                while (true) {
-                    currentCoroutineContext().ensureActive()
-                    val (nowFreqs, nowDwell) = plan()
-                    if (nowFreqs != freqs) {
-                        freqs = nowFreqs
-                        index = 0
-                        sensor?.status?.update(statusName, "channels" to freqs.map(Channels::label),
-                            "bands" to freqs.mapNotNull(Channels::bandOf).distinct().sorted(), "chan_rev" to sensor.wifiControl.rev,
-                            "regdomain" to sensor.wifiControl.override?.regdomain)
-                        note("Channels now " + freqs.joinToString(",") { Channels.label(it) })
-                    } else {
-                        sensor?.status?.update(statusName, "chan_rev" to sensor.wifiControl.rev)
-                    }
-                    dwell = nowDwell
-                    val freq = freqs[index % freqs.size]
-                    if (freq != tuned) {
-                        radio.tune(freq)
-                        tuned = freq
-                    }
-                    currentFreq.value = freq
-                    status.value = "Listening on %d MHz".format(freq)
-                    sensor?.status?.update(statusName, "channel" to Channels.label(freq), "band" to Channels.bandOf(freq))
-                    // The channel survey sniffowireless keeps per dwell: frames, bytes, rough airtime and retries.
-                    var sFrames = 0
-                    var sBytes = 0L
-                    var sAirtime = 0.0
-                    var sRetries = 0
-                    val t0 = System.currentTimeMillis()
-                    val end = t0 + dwell
-                    while (System.currentTimeMillis() < end) {
-                        val f = radio.receive(100) ?: continue
-                        if (f.fcsError) continue
-                        writer.write(f.freqMhz, f.rssi, f.data)
-                        sensor?.recorder?.takeIf { it.tapping }?.record("wifi", statusName, Recorder.radiotap(f.freqMhz, f.rssi) + f.data, mapOf("tuned" to freq))
-                        collector.add(f.freqMhz, f.rssi, f.data)
-                        sFrames++
-                        sBytes += f.data.size
-                        sAirtime += 20 + f.data.size * 8 / 24.0
-                        if (f.data.size > 1 && (f.data[1].toInt() and 0x08) != 0) sRetries++
-                        Channels.bandOf(WifiFrames.radioFreq(f.freqMhz, freq))?.let { bandFrames[it] = (bandFrames[it] ?: 0) + 1 }
-                        if (sensor != null && sensor.sending) {
-                            for (o in WifiFrames.parse(f.data, f.rssi, f.freqMhz, freq, sensor.now(), fpGate, gates)) sensor.sink.put(o)
-                            for (o in joins.feed(f.data, f.rssi, sensor.now())) sensor.sink.put(o)
-                            val rate = f.rate
-                            val mcs = f.mcs
-                            links.feed(f.data, rate, mcs, f.rssi)
-                        }
-                    }
-                    if (sensor != null && sensor.sending && links.due(sensor.now())) {
-                        for (o in links.drain(sensor.now())) sensor.sink.put(o)
-                    }
-                    if (sensor != null && sensor.sending) {
-                        sensor.sink.put(linkedMapOf("t" to "chan", "ts" to sensor.now(), "mac" to "-", "freq" to freq,
-                            "dwell_ms" to (System.currentTimeMillis() - t0).toInt(), "frames" to sFrames, "bytes" to sBytes,
-                            "airtime_us" to sAirtime.toLong(), "retries" to sRetries, "noise_sum" to 0, "noise_cnt" to 0))
-                    }
-                    if (System.currentTimeMillis() - lastPublish > 500) {
-                        lastPublish = System.currentTimeMillis()
-                        _networks.value = collector.networks()
-                        _clients.value = collector.clients()
-                        _channels.value = collector.channels()
-                        frames.value = collector.total
-                    }
-                    if (System.currentTimeMillis() - lastRate >= 5000) {
-                        val pps = (collector.total - lastTotal) * 1000.0 / (System.currentTimeMillis() - lastRate)
-                        lastRate = System.currentTimeMillis()
-                        lastTotal = collector.total
-                        sensor?.status?.update(statusName, "packets" to collector.total, "pps" to Math.round(pps * 10) / 10.0,
-                            "band_frames" to HashMap(bandFrames))
-                    }
-                    if (index % 20 == 0) note("${collector.total} frames, ${collector.networkCount} networks so far")
-                    index++
+            var index = 0
+            var tuned = freqs.first()
+            var lastRate = System.currentTimeMillis()
+            var mine = 0
+            var lastMine = 0
+            val bandFrames = HashMap<String, Int>()
+            while (true) {
+                currentCoroutineContext().ensureActive()
+                val (nowFreqs, nowDwell) = mine()
+                if (nowFreqs != freqs) {
+                    freqs = nowFreqs
+                    index = 0
+                    setState(a) { it.copy(channels = freqs) }
+                    sensor?.status?.update(statusName, "channels" to freqs.map(Channels::label),
+                        "bands" to freqs.mapNotNull(Channels::bandOf).distinct().sorted(), "chan_rev" to sensor.wifiControl.rev,
+                        "regdomain" to sensor.wifiControl.override?.regdomain)
+                    note("Channels now " + freqs.joinToString(",") { Channels.label(it) })
+                } else {
+                    sensor?.status?.update(statusName, "chan_rev" to sensor.wifiControl.rev)
                 }
+                dwell = nowDwell
+                val freq = freqs[index % freqs.size]
+                if (freq != tuned) {
+                    radio.tune(freq)
+                    tuned = freq
+                }
+                setState(a) { it.copy(freq = freq, status = "Listening on %d MHz".format(freq), error = null) }
+                sensor?.status?.update(statusName, "channel" to Channels.label(freq), "band" to Channels.bandOf(freq))
+                // The channel survey sniffowireless keeps per dwell: frames, bytes, rough airtime and retries.
+                var sFrames = 0
+                var sBytes = 0L
+                var sAirtime = 0.0
+                var sRetries = 0
+                val t0 = System.currentTimeMillis()
+                val end = t0 + dwell
+                while (System.currentTimeMillis() < end) {
+                    val f = radio.receive(100) ?: continue
+                    if (f.fcsError) continue
+                    writer.write(f.freqMhz, f.rssi, f.data)
+                    sensor?.recorder?.takeIf { it.tapping }?.record("wifi", statusName, Recorder.radiotap(f.freqMhz, f.rssi) + f.data, mapOf("tuned" to freq))
+                    collector.add(f.freqMhz, f.rssi, f.data)
+                    mine++
+                    sFrames++
+                    sBytes += f.data.size
+                    sAirtime += 20 + f.data.size * 8 / 24.0
+                    if (f.data.size > 1 && (f.data[1].toInt() and 0x08) != 0) sRetries++
+                    Channels.bandOf(WifiFrames.radioFreq(f.freqMhz, freq))?.let { bandFrames[it] = (bandFrames[it] ?: 0) + 1 }
+                    if (sensor != null && sensor.sending) {
+                        for (o in WifiFrames.parse(f.data, f.rssi, f.freqMhz, freq, sensor.now(), fpGate, gates)) sensor.sink.put(o)
+                        for (o in joins.feed(f.data, f.rssi, sensor.now())) sensor.sink.put(o)
+                        links.feed(f.data, f.rate, f.mcs, f.rssi)
+                    }
+                }
+                if (sensor != null && sensor.sending && links.due(sensor.now())) {
+                    for (o in links.drain(sensor.now())) sensor.sink.put(o)
+                }
+                if (sensor != null && sensor.sending) {
+                    sensor.sink.put(linkedMapOf("t" to "chan", "ts" to sensor.now(), "mac" to "-", "freq" to freq,
+                        "dwell_ms" to (System.currentTimeMillis() - t0).toInt(), "frames" to sFrames, "bytes" to sBytes,
+                        "airtime_us" to sAirtime.toLong(), "retries" to sRetries, "noise_sum" to 0, "noise_cnt" to 0))
+                }
+                if (System.currentTimeMillis() - lastRate >= 5000) {
+                    val pps = (mine - lastMine) * 1000.0 / (System.currentTimeMillis() - lastRate)
+                    lastRate = System.currentTimeMillis()
+                    lastMine = mine
+                    sensor?.status?.update(statusName, "packets" to mine, "pps" to Math.round(pps * 10) / 10.0,
+                        "band_frames" to HashMap(bandFrames))
+                }
+                if (index % 20 == 0) note("$mine frames, ${collector.networkCount} networks so far")
+                index++
             }
         } finally {
-            activeStatus?.let { sensor?.status?.remove(it) }
-            activeStatus = null
-            radioInUse?.let { runCatching { it.close() } }
-            radioInUse = null
+            sensor?.status?.remove(statusName)
+            radio?.let { runCatching { it.close() } }
             runCatching { connection.releaseInterface(iface) }
             connection.close()
         }
@@ -422,12 +487,13 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
 
     /** Turns frames into networks and the devices talking in them. */
     private class Collector {
-        var total = 0
+        @Volatile var total = 0
         private val nets = HashMap<String, HeardNetwork>()
         private val stations = HashMap<String, HeardClient>()
         private val perChannel = HashMap<Int, Int>()
-        val networkCount get() = nets.size
+        val networkCount @Synchronized get() = nets.size
 
+        @Synchronized
         fun add(freq: Int, rssi: Int?, data: ByteArray) {
             total++
             perChannel[freq] = (perChannel[freq] ?: 0) + 1
@@ -455,8 +521,11 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
 
         private fun vendor(mac: String) = if (OuiDatabase.isLocallyAdministered(mac)) null else OuiDatabase.lookup(mac)
 
+        @Synchronized
         fun networks() = nets.values.sortedByDescending { it.rssi ?: -127 }
+        @Synchronized
         fun clients() = stations.values.sortedByDescending { it.frames }.take(200)
+        @Synchronized
         fun channels() = perChannel.map { ChannelCount(it.key, it.value) }.sortedBy { it.freqMhz }
     }
 
@@ -481,8 +550,8 @@ class UsbWifiMonitor(context: Context, private val hub: Hub? = null) {
     }
 
     companion object {
-        /** The name an MT7921U is reported under on sniffowireless's Sensors and Wi-Fi channels pages (an AR9271: "ar9271"). */
-        const val IFACE = "mt7921u"
+        /** Channel planning outside sensor mode: no server settings. */
+        private val LOCAL = WifiControl()
     }
 }
 
