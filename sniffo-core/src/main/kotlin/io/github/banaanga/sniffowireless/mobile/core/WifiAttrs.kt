@@ -178,6 +178,7 @@ object WifiAttrs {
                         if (env == 0x4F || env == 0x49) out["country_env"] = if (env == 0x49) "indoor" else "outdoor"
                     }
                 }
+                e.id == 5 && info.size >= 2 && u8(info, 1) != 0 -> out["dtim"] = u8(info, 1)   // TIM: DTIM period (server 34.2)
                 e.id == 11 && info.size >= 5 -> out["load"] = linkedMapOf("sta" to le16(info, 0), "util" to Math.round(u8(info, 2) * 100.0 / 255).toInt())
                 e.id == 48 -> parseRsn(info)?.let { out["rsn"] = it }
                 e.id == 54 && info.size >= 3 -> roaming += "11r"
@@ -220,7 +221,7 @@ object WifiAttrs {
                         if (locked == true) out["wps_locked"] = true
                     }
                 }
-                // The channel width it announces (sniffowireless 35): HT (40), VHT (80 / 160), HE 6 GHz and EHT (up to 320)
+                // The channel width it announces (sniffowireless 34.1): HT (40), VHT (80 / 160), HE 6 GHz and EHT (up to 320)
                 e.id == 61 && info.size >= 2 -> if (u8(info, 1) and 0x03 in setOf(1, 3) && u8(info, 1) and 0x04 != 0) widths += 40
                 e.id == 192 && info.size >= 3 -> {
                     val cw = u8(info, 0)

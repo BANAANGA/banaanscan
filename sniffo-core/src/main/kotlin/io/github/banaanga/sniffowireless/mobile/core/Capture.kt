@@ -22,7 +22,7 @@ class Recorder(private val clock: () -> Long = System::currentTimeMillis) {
         private set
     /** Live frames for the server's Frames page: the sources hand frames over while it or a recording wants them ([tapping]). */
     val live = LiveTap(clock)
-    /** The last seconds of frames, while the server's automatic recording includes this phone (sniffowireless 35). */
+    /** The last seconds of frames, while the server's automatic recording includes this phone (sniffowireless 34.1). */
     val pre = PreBuffer(clock)
     val tapping: Boolean get() = active || live.active || pre.active
     @Volatile var file: File? = null

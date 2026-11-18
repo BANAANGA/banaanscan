@@ -82,6 +82,11 @@ fun SensorScreen(vm: MainViewModel) {
     var loraOn by remember { mutableStateOf(s.lora) }
     val loraBoards by hub.lora.boards.collectAsStateWithLifecycle()
     var btPassive by remember { mutableStateOf(s.btPassive) }
+    var walking by rememberSaveable { mutableStateOf(false) }
+    if (walking) {
+        WalkScreen(vm) { walking = false }
+        return
+    }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -102,6 +107,7 @@ fun SensorScreen(vm: MainViewModel) {
 
     Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
         Panel(title = "Remote sensor", action = {
+            if (s.target != null) Btn("Walk survey", { walking = true })
             if (running) Btn("Stop", { SensorService.stop(context) })
             else Btn("Start", ::start, enabled = canStart && token.isNotBlank() && channelError == null)
         }) {
@@ -271,6 +277,6 @@ private fun SourceRow(title: String, detail: String, checked: Boolean, enabled: 
 }
 
 @Composable
-private fun FieldLabel(text: String) {
+internal fun FieldLabel(text: String) {
     Text(text, style = MaterialTheme.typography.labelMedium, color = Sniffo.c.muted, modifier = Modifier.padding(top = 4.dp))
 }
