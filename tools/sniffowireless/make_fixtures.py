@@ -172,13 +172,13 @@ def data(a1, a2, a3, to_ds, from_ds, qos=False, protected=True, seq=300, payload
 
 
 def wifi_cases():
-    full = (SSID("Example Home") / RATES_G / DS(36) / COUNTRY / BSS_LOAD / rsn(akm=(2,), caps=0x008c) / HT_CAP / HT_OP(36)
+    full = (SSID("Example Home") / RATES_G / DS(36) / E(5, bytes([1, 3, 0, 0])) / COUNTRY / BSS_LOAD / rsn(akm=(2,), caps=0x008c) / HT_CAP / HT_OP(36)
             / VHT_CAP / RM / MDE / EXTCAP / HE_CAP / HE_OP(21) / wps_ie() / APPLE_IE / BRCM / WME / RNR / UBNT)
     cases = [
         ("beacon full WPA2", rt(5180, -47), beacon(AP, full), None),
         ("beacon WPA3 only", rt(5745, -60), beacon(AP2, SSID("Example WPA3") / RATES_G / HT_OP(149) / rsn(akm=(8,), caps=0x00cc)
                                                        / HE_CAP / EHT_CAP / MULTI_LINK / HE_OP(5)), None),
-        ("beacon transition", rt(2437, -55), beacon(AP, SSID("Example Mix") / RATES / DS(6) / XRATES
+        ("beacon transition", rt(2437, -55), beacon(AP, SSID("Example Mix") / RATES / DS(6) / E(5, bytes([0, 0, 0, 0])) / XRATES
                                                      / rsn(akm=(2, 8), caps=0x0080) / HT_CAP / HT_OP(6) / EXTCAP), None),
         ("beacon SAE-EXT and 802.1X", rt(2412, -71), beacon(AP, SSID("Example Ent") / RATES / DS(1)
                                                             / rsn(pairwise=(4, 9), akm=(24, 1), caps=0x00cc, group=9)), None),

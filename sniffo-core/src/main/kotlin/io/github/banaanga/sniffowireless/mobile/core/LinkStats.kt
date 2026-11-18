@@ -47,7 +47,7 @@ class LinkCounter {
             Entry(mac(f, bssidAt)).also { links[key] = it }
         }
         e.frames++
-        e.bytes += f.size   // for the airtime it took (sniffowireless 35)
+        e.bytes += f.size   // for the airtime it took (sniffowireless 34.1)
         if (fc1 and 0x08 != 0) e.retries++
         if (rate != null && rate > 0) {
             val k = rateKey(rate)

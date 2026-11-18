@@ -7,7 +7,7 @@ import org.junit.Test
 import java.nio.file.Files
 import java.util.zip.GZIPInputStream
 
-/** The last seconds of frames for the server's automatic recording (sniffowireless 35), as capture.PREBUF keeps them. */
+/** The last seconds of frames for the server's automatic recording (sniffowireless 34.1), as capture.PREBUF keeps them. */
 class PreBufferTest {
     private fun waitFor(cond: () -> Boolean) {
         val end = System.currentTimeMillis() + 5000

@@ -51,7 +51,7 @@ The phone then works like one of sniffowireless's remote sensors:
   then opens in the server's **Frames** page. The phone's own Wi-Fi and Bluetooth can't be recorded, because Android only
   passes on what it already decoded, not the frames. Needs sniffowireless 33.2 or newer.
 * **Automatic recording:** when the server's **Record automatically** includes this phone, the phone keeps the last seconds of
-  what its USB adapters receive in memory, so a recording an event starts also holds what led up to it. Needs sniffowireless 35.
+  what its USB adapters receive in memory, so a recording an event starts also holds what led up to it. Needs sniffowireless 34.1.
 * **Live frames:** on the server, **Frames → Live → Radios of** this phone shows what its USB adapters receive as it
   arrives. The same radios as frame recording can be shown. The phone sends the frames with its uploads, every 2 seconds and
   at most 3,000 at a time, and stops when the server stops asking. Needs sniffowireless 33.3 or newer.
@@ -62,10 +62,17 @@ The phone then works like one of sniffowireless's remote sensors:
   * *connection steps*: authentication, association, EAP, the 4-way handshake, deauthentications, 802.11v/k, for the
     troubleshooter and the roam timeline. Only the step, the addresses and the codes are sent, nothing of the keys.
   * *beacon rate and size* of every access point, for the beacon overhead per channel.
-  * *sniffowireless 35:* the channel width each access point announces (BSS colours and widths), the bytes of every
+  * *sniffowireless 34.1:* the channel width each access point announces (BSS colours and widths), the bytes of every
     client's data frames (who uses the airtime), and the key management and PMF a client chose (client readiness).
+  * *sniffowireless 34.2:* the DTIM period of every access point (power save: how long sleeping clients wait for multicast).
 
   The phone's own Wi-Fi scan has none of these.
+* **Walk survey (sniffowireless 34.2):** **Walk survey** on the Sensor page shows the server's floor plan and this phone's
+  surveys. Start one, stand still for 10 seconds and tap where you are: what the phone heard in those seconds becomes a point,
+  coloured by the strongest of your access points, and the server's suggestion for an extra access point appears as a dashed
+  **+**. Undo, Finish and Go on work as on the server's Walk survey page, which has the heatmaps and comparisons of the same
+  surveys. It uses the sensor token, which reaches only this sensor's surveys. PNG, JPEG and WebP floor plans are drawn; an SVG
+  one is not (the points then go on a blank floor of its shape).
 * **Keeps running:** a foreground service with a notification keeps capturing and sending with the screen off. Uploads
   go every 2 seconds; when the server can't be reached they are kept (up to 50,000 observations) and sent later.
 
